@@ -1,0 +1,10 @@
+node_modules
+package-lock.json
+djs-bot-base-*
+
+src
+.prettierrc
+tsconfig.json
+.gitignore
+readme.md
+docs

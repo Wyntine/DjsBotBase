@@ -1,0 +1,29 @@
+{
+  "name": "djs-bot-base",
+  "version": "1.0.0",
+  "description": "Discord.js tabanlı komut ve etkinlik sistemlerine sahip bir bot temeli",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "cls && rimraf ./dist && tsc && prettier --write ./dist",
+    "update": "cls && ncu -u",
+    "prepack": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Wyntine/DjsBotBase.git"
+  },
+  "author": "Wyntine",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Wyntine/DjsBotBase/issues"
+  },
+  "homepage": "https://github.com/Wyntine/DjsBotBase#readme",
+  "devDependencies": {
+    "@types/node": "^18.15.11",
+    "discord.js": "^14.8.0",
+    "prettier": "^2.8.7",
+    "rimraf": "^4.4.1",
+    "typescript": "^5.0.2"
+  }
+}
