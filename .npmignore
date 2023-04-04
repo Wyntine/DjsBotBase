@@ -6,5 +6,4 @@ src
 .prettierrc
 tsconfig.json
 .gitignore
-readme.md
 docs

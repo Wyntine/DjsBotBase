@@ -1,133 +1,225 @@
-# Türkçe kılavuza hoş geldiniz!
+# 🌍 Türkçe kılavuza hoş geldiniz!
 
-- **Not**: Aşağıda gördüğünüz örnek **ESM** modül sistemi ile verilen örnektir. Eğer ESM kullanmıyorsanız paketleri `require(...)` ile aktarabilirsiniz.
+✨ **Sürüm 1.1.0**
 
-## Botun örnek ana sayfası (index.js gibi):
+```
+npm i djs-bot-base
+```
+
+# 🚀 Yenilikler
+
+- Eğik çizgi komutları için `SlashCommand` sınıfı oluşturuldu ve komut üstlenicisinde desteklemesi için güncellemeler yapıldı.
+- Bota ayarlanan varsayılan üstleniciyi bottan kaldırma eklendi: `<CommandHandler>.removeDefaultHandler(<Client>)`
+- Kılavuz güncellendi!
+
+# 🧰 Hata düzeltmeleri
+
+- Her komut okunduğunda toplam okunan komut sayısını gösterme hatası düzeltildi. Okunan toplam komut sayısı komutların hepsi okunduktan sonra gösterilecek.
+
+# 🏅 Botun örnek ana sayfası (index.js gibi)
+
+ESM:
 
 ```js
 import { CommandHandler, EventHandler } from "djs-bot-base";
 import { Client, Partials } from "discord.js";
+// Örnek koda bakın
+```
 
-const commands = new CommandHandler({
-  suppressWarnings: true,
-  prefix: "!",
-  developerIds: ["geliştirici idleri"],
-});
+CommonJS:
+
+```js
+const { CommandHandler, EventHandler } = require("djs-bot-base");
+const { Client, Partials } = require("discord.js");
+// Örnek koda bakın
+```
+
+Örnek kod:
+
+```js
+const commands = new CommandHandler({ prefix: "!" });
 const events = new EventHandler();
 
 const client = new Client({
   intents: ["MessageContent", "GuildMessages", "Guilds", "DirectMessages"],
   partials: [Partials.User, Partials.Channel, Partials.Message],
 });
+const token = "bot tokeni";
 
-await commands.setCommands();
-commands.setDefaultHandler(client);
-await events.setEvents(client);
-client.login("token");
+(async () => {
+  await commands.setCommands();
+  await commands.setSlashCommands();
+  await events.setEvents(client);
+  commands.setDefaultHandler(client).setDefaultSlashHandler(client);
+  await client.login(token);
+  await commands.registerSlashCommands(client);
+})();
 ```
 
-## Modülün içeriği
+# 📦 Modülün içeriği
 
-- Modülde komut ve etkinliklerin sınıfı (class) ve üstlenicileri (handler) bulunmaktadır:
-  <br>⚠️ Komut ve etkinlik sınıflarının dosya dışına aktarımı varsayılan aktarım olarak ayarlanmalıdır.
+- **Not**: Komut ve etkinlik sınıflarının dosya dışına aktarımı varsayılan aktarım olarak ayarlanmalıdır.
 
-  ### 🗝️ Komut sınıfı
+# 🛠️ Komutlar
 
-  ```js
-  export default new Command({
-    name: "test", // Zorunlu, komutun ismi
-    aliases: ["deneme"] // İsteğe bağlı, komutun yan isimleri
-    guildOnly: false, // İsteğe bağlı, komutun sadece sunucuda çalışıp çalışmayacağı
-    dmOnly: false, // İsteğe bağlı, komutun özelde çalışıp çalışmayacağı
-    developerOnly: true, // İsteğe bağlı, komutun geliştiricilere özel olup olmayacağı
-    async run(message) {
-      // Zorunlu, komut algılandığında çalıştırılacak kod
-    },
-  });
-  ```
+## 🗝️ Komut sınıfı
 
-  - **Not**: Eğer komutunuzun sadece sunucularda/özelde çalışmasını planlıyorsanız `guildOnly/dmOnly` değişkenini aktif etmeniz kod düzenleyici uygulamanızın size daha doğru bilgi sunmasını sağlar.
-    <br>⚠️ İkisini aynı anda aktif ederseniz bir etkisi olmayacaktır.<br><br>
+```js
+export default new Command({
+  name: "test", // Zorunlu, komutun ismi
+  aliases: ["deneme"] // İsteğe bağlı, komutun yan isimleri
+  guildOnly: false, // İsteğe bağlı, komutun sadece sunucuda çalışıp çalışmayacağı
+  dmOnly: false, // İsteğe bağlı, komutun özelde çalışıp çalışmayacağı
+  developerOnly: true, // İsteğe bağlı, komutun geliştiricilere özel olup olmayacağı
+  async run(message) {
+    // Zorunlu, komut algılandığında çalıştırılacak kod
+  },
+});
+```
 
-  ### 💻 Komut üstlenici sınıfı
+- **Not**: Eğer komutunuzun sadece sunucularda/özelde çalışmasını planlıyorsanız `guildOnly/dmOnly` değişkenini aktif etmeniz kod düzenleyici uygulamanızın size daha doğru bilgi sunmasını sağlar.
+  <br>⚠️ İkisini aynı anda aktif ederseniz bir etkisi olmayacaktır.
 
-  ```js
-  const commands = new CommandHandler({
-    commandsDir: "commands", // İsteğe bağlı, varsayılan: "commands", taranacak komutların klasör adı
-    suppressWarnings: true, // İsteğe bağlı, komut üstlenicisindeki uyarıları gizler
-    prefix: "!", // İsteğe bağlı, kullanılan ön eki kendiniz ayarlayacaksanız gerek yok
-    developerIds: ["geliştirici idleri"], // İsteğe bağlı, geliştiricilerin idleri
-  });
-  ```
+## 🗝️ Eğik çizgi komut sınıfı
+
+```js
+export default new SlashCommand({
+  slashCommandData: (builder) => builder.setName("komut-ismi").setDescription("Komut açıklaması"), // Zorunlu, eğik çizgi komutunun verisi
+  async run(interaction) {
+    // Zorunlu, komut algılandığında çalıştırılacak kod
+  },
+});
+```
+
+## 💻 Komut üstlenici sınıfı
+
+```js
+const commands = new CommandHandler({
+  commandsDir: "commands", // İsteğe bağlı, varsayılan: "commands", taranacak komutların klasör adı
+  slashCommandsDir: "slashCommands", // İsteğe bağlı, varsayılan: "slashCommands", taranacak eğik çizgi komutlarının klasör adı
+  suppressWarnings: true, // İsteğe bağlı, komut üstlenicisindeki uyarıları gizler
+  prefix: "!", // İsteğe bağlı, kullanılan ön eki kendiniz ayarlayacaksanız gerek yok
+  developerIds: ["geliştirici idleri"], // İsteğe bağlı, geliştiricilerin idleri
+});
+```
+
+- **Not**: Eğik çizgi komutların ve normal komutların klasörü aynıyken komutlar çakışacağından hata verecektir.
+
+- Komut sistemi eğik çizgi komutları ve normal komutlar olmak üzere ikiye ayrılır:
+
+  ### <u>Normal komutlar</u>
 
   - `<CommandHandler>.setCommands()`
 
-    Belirtilen klasörü okur ve komutları üstleniciye kaydeder.
+    Belirtilen klasörü okur ve normal komutları üstleniciye kaydeder.
     <br>💡 Komutların okunmasını beklemek için `await` kullanmanız tavsiye edilir.
 
   - `<CommandHandler>.getCommand(<string>)`
 
-    Üstlenicide bulunan komutlarla eşleşen isme sahip komutu döndürür.
+    Üstlenicide bulunan normal komutlarla eşleşen isme sahip normal komutu döndürür.
 
   - `<CommandHandler>.getCommandOrAliases(<string>)`
 
-    Üstlenicide bulunan komutların ismiyle veya yan isimleriyle eşleşen komutu döndürür.
+    Üstlenicide bulunan komutların ismiyle veya yan isimleriyle eşleşen normal komutu döndürür.
 
   - `<CommandHandler>.clearCommands()`
 
-    Üstlenicideki komutları sıfırlar.
+    Üstlenicideki normal komutları sıfırlar.
 
   - `<CommandHandler>.removeCommand(<string>)`
 
-    Belirtilen isimle eşleşen komutu üstleniciden siler.
+    Belirtilen isimle eşleşen normal komutu üstleniciden siler.
 
   - `<CommandHandler>.setDefaultHandler(<Client>)`
 
-    Modüldeki varsayılan komut çalıştırıcısını etkinlik olarak kaydeder.
+    Modüldeki varsayılan normal komut çalıştırıcısını etkinlik olarak kaydeder.
     <br>⚠️ Sunucuya özel değiştirilebilir ön ek gibi özellikleri desteklemez.
 
   - `<CommandHandler>.runDefaultHandler(<Message>, <string?>)`
 
-    Modüldeki varsayılan komut çalıştırıcısını çalıştırmayı sağlar.
-    <br>💡 `setDefaultHandler(<Client>)` kullanmak yerine bunu etkinlik içine ekleyerek kullanmanız önerilir.<br><br>
+    Modüldeki varsayılan normal komut çalıştırıcısını çalıştırmayı sağlar.
+    <br>💡 `setDefaultHandler(<Client>)` kullanmak yerine bunu etkinlik içine ekleyerek kullanmanız önerilir.
 
-  ### 🗝️ Etkinlik sınıfı
+  - `<CommandHandler>.removeDefaultHandler(<Client>)`
 
-  ```js
-  export default new Event({
-    categoryName: "ready", // Zorunlu, etkinliğin bulunacağı kategori
-    runOrder: 1, // İsteğe bağlı, etkinliğin çalışma sırası, en küçük sayı en önce çalışır (en küçük 0), değer girilmezse değer belirtilenlerden sonra çalışır
-    async run(client) {
-      // Zorunlu, etkinlik algılandığında çalıştırılacak kod
-    },
-  });
-  ```
+    Kaydedilen varsayılan normal komut çalıştırıcısını bottan kaldırır.
 
-  - **Not**: Eğer birkaç etkinliğin çalıştırılma sırası aynıysa veya belirtilmemişse okunma sırasına göre sıralanırlar.<br><br>
+  ### <u>Eğik çizgi komutları</u>
 
-  ### 💻 Etkinlik üstlenici sınıfı
+  - `<CommandHandler>.setSlashCommands()`
 
-  ```js
-  const events = new EventHandler({
-    eventsDir: "events", // İsteğe bağlı, varsayılan: "events", taranacak etkinliklerin klasör adı
-    suppressWarnings: false, // İsteğe bağlı, etkinlik üstlenicisindeki uyarıları gizler
-  });
-  ```
+    Belirtilen klasörü okur ve eğik çizgi komutlarını üstleniciye kaydeder.
+    <br>💡 Komutların okunmasını beklemek için `await` kullanmanız tavsiye edilir.
 
-  - `<EventHandler>.setEvents(<Client>)`
+  - `<CommandHandler>.getSlashCommand(<string>)`
 
-    Belirtilen klasörü okur ve etkinlikleri üstleniciye kaydederken bota da kaydeder.
-    <br>💡 Etkinliklerin okunmasını beklemek için `await` kullanmanız tavsiye edilir.
+    Üstlenicide bulunan eğik çizgi komutlarıyla eşleşen isme sahip eğik çizgi komutunu döndürür.
 
-  - `<EventHandler>.getEventCategory(<string>)`
+  - `<CommandHandler>.clearSlashCommands()`
 
-    Üstlenicide bulunan etkinlik kategorisindeki etkinlikleri ve ek veriyi döndürür.
+    Üstlenicideki eğik çizgi komutlarını sıfırlar.
 
-  - `<EventHandler>.clearEvents()`
+  - `<CommandHandler>.removeSlashCommand(<string>)`
 
-    Üstlenicideki ve bottaki etkinlikleri temizler.
+    Belirtilen isimle eşleşen eğik çizgi komutunu üstleniciden siler.
 
-# Bir hata buldum!
+  - `<CommandHandler>.setDefaultSlashHandler(<Client>)`
+
+    Modüldeki varsayılan eğik çizgi komutu çalıştırıcısını etkinlik olarak kaydeder.
+
+  - `<CommandHandler>.runDefaultHandler(<Message>, <string?>)`
+
+    Modüldeki varsayılan eğik çizgi komutu çalıştırıcısını çalıştırmayı sağlar.
+    <br>💡 `setDefaultSlashHandler(<Client>)` kullanmak yerine bunu etkinlik içine ekleyerek kullanmanız önerilir.
+
+  - `<CommandHandler>.removeDefaultHandler(<Client>)`
+
+    Kaydedilen varsayılan eğik çizgi komutu çalıştırıcısını bottan kaldırır.
+
+  - `<CommandHandler>.registerSlashCommands(<Client>, <string?>)`
+
+    Üstlenicideki kaydedilen komutları bota kaydeder ve komutlar kullanılabilir olur. Sunucuya özel komutlar kaydedilebilir.
+
+# 📻 Etkinlikler
+
+## 🗝️ Etkinlik sınıfı
+
+```js
+export default new Event({
+  categoryName: "ready", // Zorunlu, etkinliğin bulunacağı kategori
+  runOrder: 1, // İsteğe bağlı, etkinliğin çalışma sırası, en küçük sayı en önce çalışır (en küçük 0), değer girilmezse değer belirtilenlerden sonra çalışır
+  async run(client) {
+    // Zorunlu, etkinlik algılandığında çalıştırılacak kod
+  },
+});
+```
+
+- **Not**: Eğer birkaç etkinliğin çalıştırılma sırası aynıysa veya belirtilmemişse okunma sırasına göre sıralanırlar.
+- **Not**: Çalıştırılma sırası belirtilmiş etkinlikler öncelikli olarak çalıştırılırlar.
+
+## 💻 Etkinlik üstlenici sınıfı
+
+```js
+const events = new EventHandler({
+  eventsDir: "events", // İsteğe bağlı, varsayılan: "events", taranacak etkinliklerin klasör adı
+  suppressWarnings: false, // İsteğe bağlı, etkinlik üstlenicisindeki uyarıları gizler
+});
+```
+
+- `<EventHandler>.setEvents(<Client>)`
+
+  Belirtilen klasörü okur ve etkinlikleri üstleniciye kaydederken bota da kaydeder.
+  <br>💡 Etkinliklerin okunmasını beklemek için `await` kullanmanız tavsiye edilir.
+
+- `<EventHandler>.getEventCategory(<string>)`
+
+  Üstlenicide bulunan etkinlik kategorisindeki etkinlikleri ve ek veriyi döndürür.
+
+- `<EventHandler>.clearEvents()`
+
+  Üstlenicideki ve bottaki etkinlikleri temizler.
+
+# 🪰 Bir hata buldum!
 
 - 🐜 Eğer bir hata bulduysanız ve çözümünü biliyorsanız yeni istek ([pull request](https://github.com/Wyntine/DjsBotBase/compare)) açabilirsiniz!
 - 📱 Bana ulaşmak istiyorsanız [discord](https://discord.com/users/920360120469311578) üzerinden ulaşabilirsiniz!
