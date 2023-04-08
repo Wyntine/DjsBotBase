@@ -1,6 +1,6 @@
 # 🌍 Türkçe kılavuza hoş geldiniz!
 
-✨ **Sürüm 1.1.0**
+✨ **Sürüm 1.1.1**
 
 ```
 npm i djs-bot-base
@@ -8,13 +8,13 @@ npm i djs-bot-base
 
 # 🚀 Yenilikler
 
-- Eğik çizgi komutları için `SlashCommand` sınıfı oluşturuldu ve komut üstlenicisinde desteklemesi için güncellemeler yapıldı.
-- Bota ayarlanan varsayılan üstleniciyi bottan kaldırma eklendi: `<CommandHandler>.removeDefaultHandler(<Client>)`
-- Kılavuz güncellendi!
+- Sürüm 2 için hazırlıklar yapılacak. Eğik çizgi ve mesaj komutları birleştirilecek ve birkaç yenilik daha eklenecek!
 
 # 🧰 Hata düzeltmeleri
 
-- Her komut okunduğunda toplam okunan komut sayısını gösterme hatası düzeltildi. Okunan toplam komut sayısı komutların hepsi okunduktan sonra gösterilecek.
+- Kılavuzdaki küçük bir hata düzeltildi. Belki görmemiştiniz bile :)
+- TypeScript dosyalarını algılaması için üstleniciler güncellendi.
+- **Not**: TypeScript dosyalarını sadece TypeScript dosyası çalıştırırken yükleyebilirsiniz.
 
 # 🏅 Botun örnek ana sayfası (index.js gibi)
 
@@ -67,7 +67,7 @@ const token = "bot tokeni";
 ```js
 export default new Command({
   name: "test", // Zorunlu, komutun ismi
-  aliases: ["deneme"] // İsteğe bağlı, komutun yan isimleri
+  aliases: ["deneme"], // İsteğe bağlı, komutun yan isimleri
   guildOnly: false, // İsteğe bağlı, komutun sadece sunucuda çalışıp çalışmayacağı
   dmOnly: false, // İsteğe bağlı, komutun özelde çalışıp çalışmayacağı
   developerOnly: true, // İsteğe bağlı, komutun geliştiricilere özel olup olmayacağı

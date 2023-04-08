@@ -92,10 +92,10 @@ export class CommandHandler {
             continue;
           }
 
-          const fileRegex = /^(\w|\s)+.js$/;
+          const fileRegex = /^(\w|\s)+.(js|ts)$/;
 
           if (!fileRegex.test(name)) {
-            if (!this.suppressWarnings) logWarn(`'${name}' is not a JavaScript file.`);
+            if (!this.suppressWarnings) logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
             continue;
           }
 
