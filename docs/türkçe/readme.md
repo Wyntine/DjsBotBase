@@ -1,6 +1,6 @@
 # 🌍 Türkçe kılavuza hoş geldiniz!
 
-✨ **Sürüm 1.1.1**
+✨ **Sürüm 1.1.2**
 
 ```
 npm i djs-bot-base
@@ -14,6 +14,7 @@ npm i djs-bot-base
 
 - Kılavuzdaki küçük bir hata düzeltildi. Belki görmemiştiniz bile :)
 - TypeScript dosyalarını algılaması için üstleniciler güncellendi.
+- Üstteki düzeltmeyi yaparken küçük bir şeyi unutmuşum... Düzeltildi!
 - **Not**: TypeScript dosyalarını sadece TypeScript dosyası çalıştırırken yükleyebilirsiniz.
 
 # 🏅 Botun örnek ana sayfası (index.js gibi)
