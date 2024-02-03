@@ -6,6 +6,7 @@ export class Command<InGuild extends boolean = boolean> {
   private data: CommandData<InGuild>;
 
   constructor(data: CommandData<InGuild>) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!data) error("Command data can not be undefined.");
 
     if (!("name" in data) || typeof data.name !== "string") {
@@ -13,7 +14,8 @@ export class Command<InGuild extends boolean = boolean> {
     }
 
     if ("aliases" in data) {
-      if (!Array.isArray(data.aliases)) error("Command aliases must be an string array.");
+      if (!Array.isArray(data.aliases))
+        error("Command aliases must be an string array.");
 
       if (data.aliases.find((alias) => typeof alias !== "string")) {
         error("Command aliases must be an string array");

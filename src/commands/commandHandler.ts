@@ -1,5 +1,14 @@
-import type { CommandHandlerConstructorData, CommandMap, SlashCommandMap } from "./commandTypes";
-import type { ApplicationCommandDataResolvable, Client, Interaction, Message } from "discord.js";
+import type {
+  CommandHandlerConstructorData,
+  CommandMap,
+  SlashCommandMap,
+} from "./commandTypes";
+import type {
+  ApplicationCommandDataResolvable,
+  Client,
+  Interaction,
+  Message,
+} from "discord.js";
 
 import { SlashCommand } from "./slashCommandClass";
 import { Command } from "./commandClass";
@@ -8,17 +17,20 @@ import { error, logError, logInfo, logWarn } from "../helpers/logger";
 
 export class CommandHandler {
   private commandMap: CommandMap = new Map();
-  private commandsDir: string = "commands";
-  private commandRunner = (message: Message) => this.runDefaultHandler(message);
+  private commandsDir = "commands";
+  private commandRunner = (message: Message) => {
+    this.runDefaultHandler(message);
+  };
 
   private slashCommandMap: SlashCommandMap = new Map();
-  private slashCommandsDir: string = "slashCommands";
-  private slashCommandRunner = (interaction: Interaction) =>
+  private slashCommandsDir = "slashCommands";
+  private slashCommandRunner = (interaction: Interaction) => {
     this.runDefaultSlashHandler(interaction);
+  };
 
   private developerIds: string[] = [];
   private prefix!: string;
-  private suppressWarnings: boolean = false;
+  private suppressWarnings = false;
 
   constructor(data?: CommandHandlerConstructorData) {
     if (!data) return;
@@ -44,7 +56,9 @@ export class CommandHandler {
         error("'developerIds' must be a string array.");
       }
 
-      if (data.developerIds.find((developer) => typeof developer !== "string")) {
+      if (
+        data.developerIds.find((developer) => typeof developer !== "string")
+      ) {
         error("'developerIds' has an id that is not a string.");
       }
 
@@ -64,7 +78,7 @@ export class CommandHandler {
         error("'suppressWarnings' must be a boolean.");
       }
 
-      if (data.suppressWarnings === true) {
+      if (data.suppressWarnings) {
         logWarn("Warnings from command handler is suppressed.");
       }
 
@@ -78,7 +92,9 @@ export class CommandHandler {
     const { commandsDir } = this;
 
     try {
-      const newCommandsDir = commandsDir.startsWith("./") ? commandsDir : `./${commandsDir}`;
+      const newCommandsDir = commandsDir.startsWith("./")
+        ? commandsDir
+        : `./${commandsDir}`;
       const commands = await readdir(newCommandsDir, { withFileTypes: true });
 
       logInfo("Reading commands...");
@@ -95,31 +111,39 @@ export class CommandHandler {
           const fileRegex = /^(\w|\s)+.(js|ts)$/;
 
           if (!fileRegex.test(name)) {
-            if (!this.suppressWarnings) logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
+            if (!this.suppressWarnings)
+              logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
             continue;
           }
 
           const commandPath = `../../../../${newCommandsDir}/${name}`;
-          const commandData = ((await import(commandPath)) ?? {}).default;
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+          const commandData: unknown = (await import(commandPath))?.default;
 
           if (!commandData) {
-            if (!this.suppressWarnings) logWarn(`'${name}' does not have an default export.`);
+            if (!this.suppressWarnings)
+              logWarn(`'${name}' does not have an default export.`);
             continue;
           }
 
           if (!(commandData instanceof Command)) {
             if (!this.suppressWarnings) {
-              logWarn(`'${name}' does not have default export of Command instance.`);
+              logWarn(
+                `'${name}' does not have default export of Command instance.`
+              );
             }
             continue;
           }
 
           if (this.getCommandOrAliases(commandData.name)) {
-            if (!this.suppressWarnings) logWarn(`'${name}' named '${commandData.name}' exists.`);
+            if (!this.suppressWarnings)
+              logWarn(`'${name}' named '${commandData.name}' exists.`);
             continue;
           }
 
-          if (commandData.aliases.find((alias) => this.getCommandOrAliases(alias))) {
+          if (
+            commandData.aliases.find((alias) => this.getCommandOrAliases(alias))
+          ) {
             if (!this.suppressWarnings) {
               logWarn(
                 `'${name}' named '${commandData.name}' have an alias that exist on another command.`
@@ -128,7 +152,7 @@ export class CommandHandler {
             continue;
           }
 
-          this.commandMap.set(commandData.name, commandData);
+          this.commandMap.set(commandData.name, commandData as Command);
           logInfo(`Command file '${name}' (${commandData.name}) loaded.`);
         } catch (innerError) {
           logError(`Reading command '${name}' failed!`);
@@ -137,7 +161,9 @@ export class CommandHandler {
       }
 
       logInfo(
-        `${this.commandMap.size} ${this.commandMap.size === 1 ? "command" : "commands"} registered.`
+        `${this.commandMap.size} ${
+          this.commandMap.size === 1 ? "command" : "commands"
+        } registered.`
       );
     } catch (outerError) {
       logError("Reading commands failed!");
@@ -165,7 +191,10 @@ export class CommandHandler {
     return this;
   }
 
-  public async runDefaultHandler(message: Message, prefix: string = this.prefix): Promise<void> {
+  public runDefaultHandler(
+    message: Message,
+    prefix: string = this.prefix
+  ): void {
     const author = message.author;
 
     if (author.bot) return;
@@ -184,9 +213,10 @@ export class CommandHandler {
     const command = this.getCommandOrAliases(commandName);
 
     if (
-      !command ||
-      (!(command.dmOnly === true && command.guildOnly === true) &&
-        ((command.dmOnly && message.guild) || (command.guildOnly && !message.guild))) ||
+      (!command ||
+        (!(command.dmOnly === true && command.guildOnly === true) &&
+          ((command.dmOnly && message.guild) ??
+            (command.guildOnly && !message.guild)))) ??
       (command.developerOnly && !this.developerIds.includes(author.id))
     ) {
       return;
@@ -236,7 +266,9 @@ export class CommandHandler {
       const newSlashCommandsDir = slashCommandsDir.startsWith("./")
         ? slashCommandsDir
         : `./${slashCommandsDir}`;
-      const slashCommands = await readdir(newSlashCommandsDir, { withFileTypes: true });
+      const slashCommands = await readdir(newSlashCommandsDir, {
+        withFileTypes: true,
+      });
 
       logInfo("Reading slash commands...");
 
@@ -252,21 +284,26 @@ export class CommandHandler {
           const fileRegex = /^(\w|\s)+.(js|ts)$/;
 
           if (!fileRegex.test(name)) {
-            if (!this.suppressWarnings) logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
+            if (!this.suppressWarnings)
+              logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
             continue;
           }
 
           const slashCommandPath = `../../../../${newSlashCommandsDir}/${name}`;
-          const slashCommandData = ((await import(slashCommandPath)) ?? {}).default;
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+          const slashCommandData = (await import(slashCommandPath))?.default;
 
           if (!slashCommandData) {
-            if (!this.suppressWarnings) logWarn(`'${name}' does not have an default export.`);
+            if (!this.suppressWarnings)
+              logWarn(`'${name}' does not have an default export.`);
             continue;
           }
 
           if (!(slashCommandData instanceof SlashCommand)) {
             if (!this.suppressWarnings) {
-              logWarn(`'${name}' does not have default export of SlashCommand instance.`);
+              logWarn(
+                `'${name}' does not have default export of SlashCommand instance.`
+              );
             }
             continue;
           }
@@ -275,7 +312,8 @@ export class CommandHandler {
           const builderName = slashCommandBuilderData.name;
 
           if (typeof builderName !== "string") {
-            if (!this.suppressWarnings) logWarn(`'${name}' has no name set in its builder.`);
+            if (!this.suppressWarnings)
+              logWarn(`'${name}' has no name set in its builder.`);
             continue;
           }
 
@@ -298,10 +336,10 @@ export class CommandHandler {
     }
   }
 
-  public async runDefaultSlashHandler(interaction: Interaction): Promise<void> {
+  public runDefaultSlashHandler(interaction: Interaction): void {
     const user = interaction.user;
 
-    if (user.bot || !interaction.isCommand()) return;
+    if (user.bot || !interaction.isChatInputCommand()) return;
 
     const name = interaction.commandName;
     const command = this.getSlashCommand(name);
@@ -350,9 +388,12 @@ export class CommandHandler {
     return this;
   }
 
-  public async registerSlashCommands(client: Client, guildId?: string): Promise<void> {
-    const commandList = Array.from(this.slashCommandMap.values()).map((command) =>
-      command.convertCommandData()
+  public async registerSlashCommands(
+    client: Client,
+    guildId?: string
+  ): Promise<void> {
+    const commandList = Array.from(this.slashCommandMap.values()).map(
+      (command) => command.convertCommandData()
     ) as ApplicationCommandDataResolvable[];
 
     if (typeof guildId === "string") {

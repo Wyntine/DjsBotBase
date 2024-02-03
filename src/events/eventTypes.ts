@@ -5,7 +5,10 @@ export type CategoryList = keyof ClientEvents;
 
 export type EventMap = Map<CategoryList, EventList<CategoryList>>;
 
-export type EventAnonymousRunner = (...data: ClientEvents[CategoryList]) => Awaitable<any>;
+export type EventAnonymousRunner = (
+  ...data: ClientEvents[CategoryList]
+) => // eslint-disable-next-line @typescript-eslint/no-explicit-any
+Awaitable<any>;
 
 export type EventRunner<EventCategory extends CategoryList> = (
   ...data: ClientEvents[EventCategory]

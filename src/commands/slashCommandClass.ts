@@ -12,7 +12,8 @@ export class SlashCommand {
   private data: SlashCommandData;
 
   constructor(data: SlashCommandData) {
-    if (!data) error("Slash command data can not be undefifned.");
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!data) error("Slash command data can not be undefined.");
 
     if (!("slashCommandData" in data)) {
       error("Slash command data must be given.");
@@ -22,7 +23,9 @@ export class SlashCommand {
       !(data.slashCommandData instanceof SlashCommandBuilder) &&
       typeof data.slashCommandData !== "function"
     ) {
-      error("Slash command data must be a SlashCommandBuilder instance or a function.");
+      error(
+        "Slash command data must be a SlashCommandBuilder instance or a function."
+      );
     }
 
     if (!("run" in data) || typeof data.run !== "function") {

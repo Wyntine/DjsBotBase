@@ -13,8 +13,8 @@ import { error, logError, logInfo, logWarn } from "../helpers/logger";
 
 export class EventHandler {
   private eventMap: EventMap = new Map();
-  private eventsDir: string = "events";
-  private suppressWarnings: boolean = false;
+  private eventsDir = "events";
+  private suppressWarnings = false;
 
   constructor(data?: EventHandlerConstructorData) {
     if (!data) return;
@@ -32,7 +32,7 @@ export class EventHandler {
         error("'suppressWarnings' must be a boolean.");
       }
 
-      if (data.suppressWarnings === true) {
+      if (data.suppressWarnings) {
         logWarn("Warnings from event handler is suppressed.");
       }
 
@@ -49,9 +49,11 @@ export class EventHandler {
     }
 
     try {
-      const newEventsDir = eventsDir.startsWith("./") ? eventsDir : `./${eventsDir}`;
+      const newEventsDir = eventsDir.startsWith("./")
+        ? eventsDir
+        : `./${eventsDir}`;
       const events = await readdir(newEventsDir, { withFileTypes: true });
-      const eventCategorySet: Map<CategoryList, Event<CategoryList>[]> = new Map();
+      const eventCategorySet = new Map<CategoryList, Event<CategoryList>[]>();
 
       logInfo("Reading events...");
 
@@ -67,28 +69,36 @@ export class EventHandler {
           const fileRegex = /^(\w|\s)+.(js|ts)$/;
 
           if (!fileRegex.test(name)) {
-            if (!this.suppressWarnings) logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
+            if (!this.suppressWarnings)
+              logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
             continue;
           }
 
           const eventPath = `../../../../${newEventsDir}/${name}`;
-          const eventData = ((await import(eventPath)) ?? {}).default;
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+          const eventData = (await import(eventPath))?.default;
 
           if (!eventData) {
-            if (!this.suppressWarnings) logWarn(`'${name}' does not have an default export.`);
+            if (!this.suppressWarnings)
+              logWarn(`'${name}' does not have an default export.`);
             continue;
           }
 
           if (!(eventData instanceof Event)) {
             if (!this.suppressWarnings) {
-              logWarn(`'${name}' does not have default export of Event instance.`);
+              logWarn(
+                `'${name}' does not have default export of Event instance.`
+              );
             }
             continue;
           }
 
-          eventCategorySet.set(eventData.categoryName, [
-            ...(eventCategorySet.get(eventData.categoryName) ?? []),
-            eventData,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          const newEvent = eventData as Event<CategoryList>;
+
+          eventCategorySet.set(newEvent.categoryName, [
+            ...(eventCategorySet.get(newEvent.categoryName) ?? []),
+            newEvent,
           ]);
           logInfo(`Event file '${name}' read.`);
         } catch (innerError) {
@@ -101,13 +111,19 @@ export class EventHandler {
         const orderedEvents = eventsList
           .filter((event) => event.runOrder !== undefined)
           .sort(
-            (firstEvent, secondEvent) => (firstEvent.runOrder ?? 0) - (secondEvent.runOrder ?? 0)
+            (firstEvent, secondEvent) =>
+              (firstEvent.runOrder ?? 0) - (secondEvent.runOrder ?? 0)
           );
-        const randomEvents = eventsList.filter((event) => event.runOrder === undefined);
+        const randomEvents = eventsList.filter(
+          (event) => event.runOrder === undefined
+        );
         const sortedEvents = [...orderedEvents, ...randomEvents];
         const categoryFunction = this.createCategoryRunner(sortedEvents);
         client.on(eventCategory, categoryFunction);
-        this.eventMap.set(eventCategory, { events: sortedEvents, categoryFunction });
+        this.eventMap.set(eventCategory, {
+          events: sortedEvents,
+          categoryFunction,
+        });
         logInfo(
           `Event category '${eventCategory}' (${sortedEvents.length} ${
             sortedEvents.length === 1 ? "event" : "events"
@@ -118,7 +134,9 @@ export class EventHandler {
         (total, current) => total + current.events.length,
         0
       );
-      logInfo(`${totalEvents} ${totalEvents === 1 ? "event" : "events"} registered.`);
+      logInfo(
+        `${totalEvents} ${totalEvents === 1 ? "event" : "events"} registered.`
+      );
       logInfo("Reading events finished.");
     } catch (outerError) {
       logError("Reading events failed!");
@@ -142,7 +160,11 @@ export class EventHandler {
     this.eventMap.clear();
   }
 
-  private createCategoryRunner(events: Event<CategoryList>[]): EventAnonymousRunner {
-    return (...data) => events.forEach((event) => event.run(...data));
+  private createCategoryRunner(
+    events: Event<CategoryList>[]
+  ): EventAnonymousRunner {
+    return (...data) => {
+      events.forEach((event) => event.run(...data));
+    };
   }
 }

@@ -1,7 +1,7 @@
 import type { Command } from "./commandClass";
 import type {
   Awaitable,
-  CommandInteraction,
+  ChatInputCommandInteraction,
   Message,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
@@ -53,7 +53,9 @@ export type SlashCommandBuilders =
   | SlashCommandSubcommandsOnlyBuilder
   | Omit<SlashCommandBuilder, "addSubcommandGroup" | "addSubcommand">;
 
-export type SlashCommandRunner = (interaction: CommandInteraction) => Awaitable<unknown>;
+export type SlashCommandRunner = (
+  interaction: ChatInputCommandInteraction
+) => Awaitable<unknown>;
 
 export interface SlashCommandData {
   slashCommandData: SlashCommandBuilderData;

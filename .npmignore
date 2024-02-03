@@ -1,9 +1,12 @@
 node_modules
 package-lock.json
 djs-bot-base-*
+pnpm-lock.yaml
 
 src
-.prettierrc
+.eslintignore
+.eslintrc.yaml
+.prettierrc.yaml
 tsconfig.json
 .gitignore
 docs

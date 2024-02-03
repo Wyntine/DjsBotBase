@@ -1,6 +1,6 @@
 # 🌍 Türkçe kılavuza hoş geldiniz!
 
-✨ **Sürüm 1.1.2**
+✨ **Sürüm 1.2.0**
 
 ```
 npm i djs-bot-base
@@ -9,13 +9,13 @@ npm i djs-bot-base
 # 🚀 Yenilikler
 
 - Sürüm 2 için hazırlıklar yapılacak. Eğik çizgi ve mesaj komutları birleştirilecek ve birkaç yenilik daha eklenecek!
+- Modülü geliştirmek için çok fazla zamanım olmadığı için sürüm 2 şimdilik gelmeyecek... Ama merak etmeyin güzel yeniliklerle sizinle olacağız!
 
 # 🧰 Hata düzeltmeleri
 
-- Kılavuzdaki küçük bir hata düzeltildi. Belki görmemiştiniz bile :)
-- TypeScript dosyalarını algılaması için üstleniciler güncellendi.
-- Üstteki düzeltmeyi yaparken küçük bir şeyi unutmuşum... Düzeltildi!
-- **Not**: TypeScript dosyalarını sadece TypeScript dosyası çalıştırırken yükleyebilirsiniz.
+- Küçük yazım hataları düzeltildi.
+- Yanlış (ve daha az isabetli) komut etkileşim türü olan CommandInteraction, ChatInputCommandInteraction ile değiştirildi.
+- Geliştiricilerin daha tutarlı kod yazması için yeni araçlar eklendi.
 
 # 🏅 Botun örnek ana sayfası (index.js gibi)
 
@@ -85,7 +85,8 @@ export default new Command({
 
 ```js
 export default new SlashCommand({
-  slashCommandData: (builder) => builder.setName("komut-ismi").setDescription("Komut açıklaması"), // Zorunlu, eğik çizgi komutunun verisi
+  slashCommandData: (builder) =>
+    builder.setName("komut-ismi").setDescription("Komut açıklaması"), // Zorunlu, eğik çizgi komutunun verisi
   async run(interaction) {
     // Zorunlu, komut algılandığında çalıştırılacak kod
   },
