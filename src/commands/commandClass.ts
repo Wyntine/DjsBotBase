@@ -14,12 +14,11 @@ export class Command<InGuild extends boolean = boolean> {
     }
 
     if ("aliases" in data) {
-      if (!Array.isArray(data.aliases))
+      if (
+        !Array.isArray(data.aliases) ||
+        data.aliases.find((alias) => typeof alias !== "string")
+      )
         error("Command aliases must be an string array.");
-
-      if (data.aliases.find((alias) => typeof alias !== "string")) {
-        error("Command aliases must be an string array");
-      }
     }
 
     if ("guildOnly" in data && typeof data.guildOnly !== "boolean") {

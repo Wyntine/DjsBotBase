@@ -32,10 +32,6 @@ export class EventHandler {
         error("'suppressWarnings' must be a boolean.");
       }
 
-      if (data.suppressWarnings) {
-        logWarn("Warnings from event handler is suppressed.");
-      }
-
       this.suppressWarnings = data.suppressWarnings;
     }
   }
@@ -125,7 +121,7 @@ export class EventHandler {
           categoryFunction,
         });
         logInfo(
-          `Event category '${eventCategory}' (${sortedEvents.length} ${
+          `Event category '${eventCategory}' (${sortedEvents.length.toString()} ${
             sortedEvents.length === 1 ? "event" : "events"
           }) registered.`
         );
@@ -135,13 +131,21 @@ export class EventHandler {
         0
       );
       logInfo(
-        `${totalEvents} ${totalEvents === 1 ? "event" : "events"} registered.`
+        `${totalEvents.toString()} ${
+          totalEvents === 1 ? "event" : "events"
+        } registered.`
       );
       logInfo("Reading events finished.");
     } catch (outerError) {
       logError("Reading events failed!");
       console.error(outerError);
     }
+  }
+
+  public getEvents(): Event<CategoryList>[] {
+    return Array.from(this.eventMap.values()).flatMap(
+      (eventList) => eventList.events
+    );
   }
 
   public getEventCategory<EventCategory extends CategoryList>(
@@ -152,10 +156,10 @@ export class EventHandler {
 
   public clearEvents(client: Client): void {
     this.eventMap.forEach(({ categoryFunction }, categoryName) =>
-      //TODO: Fix the error in types even it works correctly
-      client
-        // @ts-expect-error I think someone can fix this...
-        .removeListener(categoryName, categoryFunction)
+      client.removeListener(
+        categoryName,
+        categoryFunction as (...args: unknown[]) => void
+      )
     );
     this.eventMap.clear();
   }

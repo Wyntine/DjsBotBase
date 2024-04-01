@@ -1,8 +1,4 @@
 {
-  "ts-node": {
-    "esm": true,
-    "swc": true
-  },
   "compilerOptions": {
     "strict": true,
     "allowUnreachableCode": false,

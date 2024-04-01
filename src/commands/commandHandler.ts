@@ -78,10 +78,6 @@ export class CommandHandler {
         error("'suppressWarnings' must be a boolean.");
       }
 
-      if (data.suppressWarnings) {
-        logWarn("Warnings from command handler is suppressed.");
-      }
-
       this.suppressWarnings = data.suppressWarnings;
     }
   }
@@ -95,7 +91,7 @@ export class CommandHandler {
       const newCommandsDir = commandsDir.startsWith("./")
         ? commandsDir
         : `./${commandsDir}`;
-      const commands = await readdir(newCommandsDir, { withFileTypes: true });
+      const commands = await readdir(commandsDir, { withFileTypes: true });
 
       logInfo("Reading commands...");
 
@@ -161,7 +157,7 @@ export class CommandHandler {
       }
 
       logInfo(
-        `${this.commandMap.size} ${
+        `${this.commandMap.size.toString()} ${
           this.commandMap.size === 1 ? "command" : "commands"
         } registered.`
       );
@@ -173,6 +169,10 @@ export class CommandHandler {
 
   public getCommand(commandName: string): Command | undefined {
     return this.commandMap.get(commandName);
+  }
+
+  public getCommands(): Command[] {
+    return Array.from(this.commandMap.values());
   }
 
   public getCommandOrAliases(commandOrAliasName: string): Command | undefined {
@@ -326,7 +326,7 @@ export class CommandHandler {
       }
 
       logInfo(
-        `${this.slashCommandMap.size} slash ${
+        `${this.slashCommandMap.size.toString()} slash ${
           this.slashCommandMap.size === 1 ? "command" : "commands"
         } registered.`
       );
@@ -377,6 +377,10 @@ export class CommandHandler {
 
     client.removeListener("interactionCreate", this.slashCommandRunner);
     return this;
+  }
+
+  public getSlashCommands(): SlashCommand[] {
+    return Array.from(this.slashCommandMap.values());
   }
 
   public getSlashCommand(slashCommandName: string): SlashCommand | undefined {

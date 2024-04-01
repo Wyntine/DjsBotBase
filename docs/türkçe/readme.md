@@ -1,21 +1,23 @@
 # 🌍 Türkçe kılavuza hoş geldiniz!
 
-✨ **Sürüm 1.2.0**
+✨ **Sürüm 1.3.0**
 
 ```
 npm i djs-bot-base
 ```
 
-# 🚀 Yenilikler
+# ⏰ Uzun süreli planlar
 
 - Sürüm 2 için hazırlıklar yapılacak. Eğik çizgi ve mesaj komutları birleştirilecek ve birkaç yenilik daha eklenecek!
-- Modülü geliştirmek için çok fazla zamanım olmadığı için sürüm 2 şimdilik gelmeyecek... Ama merak etmeyin güzel yeniliklerle sizinle olacağız!
+
+# 🚀 Yenilikler
+
+- `<CommandHandler>.getCommands()`, `<CommandHandler>.getSlashCommands()` ve `<EventHandler>.getEvents()` eklendi. Niye eklememişim bilmiyorum ama çaktırmayın 😓
+- Uyarı mesajlarını susturduğunuzda bot açılırken gelen uyarı kaldırıldı.
 
 # 🧰 Hata düzeltmeleri
 
-- Küçük yazım hataları düzeltildi.
-- Yanlış (ve daha az isabetli) komut etkileşim türü olan CommandInteraction, ChatInputCommandInteraction ile değiştirildi.
-- Geliştiricilerin daha tutarlı kod yazması için yeni araçlar eklendi.
+- Şimdilik temiz!
 
 # 🏅 Botun örnek ana sayfası (index.js gibi)
 
@@ -97,8 +99,8 @@ export default new SlashCommand({
 
 ```js
 const commands = new CommandHandler({
-  commandsDir: "commands", // İsteğe bağlı, varsayılan: "commands", taranacak komutların klasör adı
-  slashCommandsDir: "slashCommands", // İsteğe bağlı, varsayılan: "slashCommands", taranacak eğik çizgi komutlarının klasör adı
+  commandsDir: "./commands", // İsteğe bağlı, varsayılan: "commands", taranacak komutların klasör adı
+  slashCommandsDir: "./slashCommands", // İsteğe bağlı, varsayılan: "slashCommands", taranacak eğik çizgi komutlarının klasör adı
   suppressWarnings: true, // İsteğe bağlı, komut üstlenicisindeki uyarıları gizler
   prefix: "!", // İsteğe bağlı, kullanılan ön eki kendiniz ayarlayacaksanız gerek yok
   developerIds: ["geliştirici idleri"], // İsteğe bağlı, geliştiricilerin idleri
@@ -119,6 +121,10 @@ const commands = new CommandHandler({
   - `<CommandHandler>.getCommand(<string>)`
 
     Üstlenicide bulunan normal komutlarla eşleşen isme sahip normal komutu döndürür.
+
+  - `<CommandHandler>.getCommands()`
+
+    Üstlenicide bulunan tüm normal komutları verir.
 
   - `<CommandHandler>.getCommandOrAliases(<string>)`
 
@@ -156,6 +162,10 @@ const commands = new CommandHandler({
   - `<CommandHandler>.getSlashCommand(<string>)`
 
     Üstlenicide bulunan eğik çizgi komutlarıyla eşleşen isme sahip eğik çizgi komutunu döndürür.
+
+  - `<CommandHandler>.getSlashCommands()`
+
+    Üstlenicide bulunan tüm eğik çizgi komutlarını verir.
 
   - `<CommandHandler>.clearSlashCommands()`
 
@@ -203,7 +213,7 @@ export default new Event({
 
 ```js
 const events = new EventHandler({
-  eventsDir: "events", // İsteğe bağlı, varsayılan: "events", taranacak etkinliklerin klasör adı
+  eventsDir: "./events", // İsteğe bağlı, varsayılan: "events", taranacak etkinliklerin klasör adı
   suppressWarnings: false, // İsteğe bağlı, etkinlik üstlenicisindeki uyarıları gizler
 });
 ```
@@ -216,6 +226,10 @@ const events = new EventHandler({
 - `<EventHandler>.getEventCategory(<string>)`
 
   Üstlenicide bulunan etkinlik kategorisindeki etkinlikleri ve ek veriyi döndürür.
+
+- `<EventHandler>.getEvents()`
+
+  Üstlenicide bulunan tüm eventleri verir.
 
 - `<EventHandler>.clearEvents()`
 
