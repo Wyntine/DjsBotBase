@@ -239,3 +239,7 @@ const events = new EventHandler({
 
 - 🐜 Eğer bir hata bulduysanız ve çözümünü biliyorsanız yeni istek ([pull request](https://github.com/Wyntine/DjsBotBase/compare)) açabilirsiniz!
 - 📱 Bana ulaşmak istiyorsanız [discord](https://discord.com/users/920360120469311578) üzerinden ulaşabilirsiniz!
+
+---
+
+<p align="center">Cartel & Wyntine tarafından Geliştirilmiştir</p>
