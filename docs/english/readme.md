@@ -237,7 +237,7 @@ const events = new EventHandler({
 
 # 🪰 Found a Bug?
 
-- 🐜 If you find a bug and know how to fix it, you can open a [pull request](https://github.com/egecanakincioglu/DjsBotBase/compare)!
+- 🐜 If you find a bug and know how to fix it, you can open a [pull request](https://github.com/Wyntine/DjsBotBase/compare)!
 - 📱 If you want to reach me, you can contact me on [Discord](https://discord.com/users/920360120469311578)!
 
 ---
