@@ -1,6 +1,7 @@
 node_modules
 package-lock.json
 djs-bot-base-*
+bun.lockb
 pnpm-lock.yaml
 
 dist
