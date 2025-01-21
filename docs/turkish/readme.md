@@ -1,25 +1,27 @@
 # 🌍 Türkçe kılavuza hoş geldiniz!
 
-✨ **Sürüm 1.3.0**
+✨ **Sürüm 1.4.0-beta.1**
 
 ```
 npm i djs-bot-base
 ```
 
-# ⏰ Uzun süreli planlar
+**Not**: Bu bir beta sürümüdür. Hatalar olabilir.
+
+# ⏰ Uzun Süreli Planlar
 
 - Sürüm 2 için hazırlıklar yapılacak. Eğik çizgi ve mesaj komutları birleştirilecek ve birkaç yenilik daha eklenecek!
 
 # 🚀 Yenilikler
 
-- `<CommandHandler>.getCommands()`, `<CommandHandler>.getSlashCommands()` ve `<EventHandler>.getEvents()` eklendi. Niye eklememişim bilmiyorum ama çaktırmayın 😓
-- Uyarı mesajlarını susturduğunuzda bot açılırken gelen uyarı kaldırıldı.
+- Geliştirme araçları güncellendi ve tertiplendi.
+- Kılavuzdaki bazı yazım yanlışları düzeltildi.
 
-# 🧰 Hata düzeltmeleri
+# 🧰 Hata Düzeltmeleri
 
 - Şimdilik temiz!
 
-# 🏅 Botun örnek ana sayfası (index.js gibi)
+# 🏅 Botun Örnek Ana Sayfası (index.js gibi)
 
 ESM:
 
@@ -59,13 +61,13 @@ const token = "bot tokeni";
 })();
 ```
 
-# 📦 Modülün içeriği
+# 📦 Modülün İçeriği
 
 - **Not**: Komut ve etkinlik sınıflarının dosya dışına aktarımı varsayılan aktarım olarak ayarlanmalıdır.
 
 # 🛠️ Komutlar
 
-## 🗝️ Komut sınıfı
+## 🗝️ Komut Sınıfı
 
 ```js
 export default new Command({
@@ -83,7 +85,7 @@ export default new Command({
 - **Not**: Eğer komutunuzun sadece sunucularda/özelde çalışmasını planlıyorsanız `guildOnly/dmOnly` değişkenini aktif etmeniz kod düzenleyici uygulamanızın size daha doğru bilgi sunmasını sağlar.
   <br>⚠️ İkisini aynı anda aktif ederseniz bir etkisi olmayacaktır.
 
-## 🗝️ Eğik çizgi komut sınıfı
+## 🗝️ Eğik Çizgi Komut Sınıfı
 
 ```js
 export default new SlashCommand({
@@ -95,7 +97,7 @@ export default new SlashCommand({
 });
 ```
 
-## 💻 Komut üstlenici sınıfı
+## 💻 Komut Üstlenici Sınıfı
 
 ```js
 const commands = new CommandHandler({
@@ -111,7 +113,7 @@ const commands = new CommandHandler({
 
 - Komut sistemi eğik çizgi komutları ve normal komutlar olmak üzere ikiye ayrılır:
 
-  ### <u>Normal komutlar</u>
+  ### <u>Normal Komutlar</u>
 
   - `<CommandHandler>.setCommands()`
 
@@ -152,7 +154,7 @@ const commands = new CommandHandler({
 
     Kaydedilen varsayılan normal komut çalıştırıcısını bottan kaldırır.
 
-  ### <u>Eğik çizgi komutları</u>
+  ### <u>Eğik Çizgi Komutları</u>
 
   - `<CommandHandler>.setSlashCommands()`
 
@@ -194,7 +196,7 @@ const commands = new CommandHandler({
 
 # 📻 Etkinlikler
 
-## 🗝️ Etkinlik sınıfı
+## 🗝️ Etkinlik Sınıfı
 
 ```js
 export default new Event({
@@ -209,7 +211,7 @@ export default new Event({
 - **Not**: Eğer birkaç etkinliğin çalıştırılma sırası aynıysa veya belirtilmemişse okunma sırasına göre sıralanırlar.
 - **Not**: Çalıştırılma sırası belirtilmiş etkinlikler öncelikli olarak çalıştırılırlar.
 
-## 💻 Etkinlik üstlenici sınıfı
+## 💻 Etkinlik Üstlenici Sınıfı
 
 ```js
 const events = new EventHandler({
@@ -235,7 +237,7 @@ const events = new EventHandler({
 
   Üstlenicideki ve bottaki etkinlikleri temizler.
 
-# 🪰 Bir hata buldum!
+# 🪰 Hata mı Buldun?
 
 - 🐜 Eğer bir hata bulduysanız ve çözümünü biliyorsanız yeni istek ([pull request](https://github.com/Wyntine/DjsBotBase/compare)) açabilirsiniz!
 - 📱 Bana ulaşmak istiyorsanız [discord](https://discord.com/users/920360120469311578) üzerinden ulaşabilirsiniz!

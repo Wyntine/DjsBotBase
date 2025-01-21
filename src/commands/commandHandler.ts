@@ -57,6 +57,7 @@ export class CommandHandler {
       }
 
       if (
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-confusing-void-expression
         data.developerIds.find((developer) => typeof developer !== "string")
       ) {
         error("'developerIds' has an id that is not a string.");
@@ -113,7 +114,7 @@ export class CommandHandler {
           }
 
           const commandPath = `../../../../${newCommandsDir}/${name}`;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           const commandData: unknown = (await import(commandPath))?.default;
 
           if (!commandData) {

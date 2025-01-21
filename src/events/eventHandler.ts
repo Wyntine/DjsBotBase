@@ -89,7 +89,6 @@ export class EventHandler {
             continue;
           }
 
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const newEvent = eventData as Event<CategoryList>;
 
           eventCategorySet.set(newEvent.categoryName, [

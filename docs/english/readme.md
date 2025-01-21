@@ -1,10 +1,12 @@
 # 🌍 Welcome to the English Guide!
 
-✨ **Version 1.3.0**
+✨ **Version 1.4.0-beta.1**
 
 ```
 npm i djs-bot-base
 ```
+
+**Note**: It is a beta version. Bugs may occur.
 
 # ⏰ Long-term Plans
 
@@ -12,8 +14,8 @@ npm i djs-bot-base
 
 # 🚀 New Features
 
-- `<CommandHandler>.getCommands()`, `<CommandHandler>.getSlashCommands()`, and `<EventHandler>.getEvents()` have been added. I don't know why I didn't add them before, but let's keep that between us 😓
-- The warning message that appeared when starting the bot with suppressed warnings has been removed.
+- Development tools updated and tidied up.
+- Fixed some typos in the docs.
 
 # 🧰 Bug Fixes
 

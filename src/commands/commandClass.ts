@@ -16,6 +16,7 @@ export class Command<InGuild extends boolean = boolean> {
     if ("aliases" in data) {
       if (
         !Array.isArray(data.aliases) ||
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-confusing-void-expression
         data.aliases.find((alias) => typeof alias !== "string")
       )
         error("Command aliases must be an string array.");

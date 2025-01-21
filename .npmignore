@@ -4,8 +4,7 @@ djs-bot-base-*
 pnpm-lock.yaml
 
 src
-.eslintignore
-.eslintrc.yaml
+eslint.config.mjs
 .prettierrc.yaml
 tsconfig.json
 .gitignore
