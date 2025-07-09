@@ -28,6 +28,14 @@ export class SlashCommand {
       );
     }
 
+    if ("developerOnly" in data && typeof data.developerOnly !== "boolean") {
+      error("Slash command 'developer only' option must be a boolean.");
+    }
+
+    if ("maintenance" in data && typeof data.maintenance !== "boolean") {
+      error("Slash command 'maintenance' option must be a boolean.");
+    }
+
     if (!("run" in data) || typeof data.run !== "function") {
       error("Slash command runner must be a function.");
     }
@@ -53,6 +61,14 @@ export class SlashCommand {
 
   get slashCommandData(): SlashCommandBuilderData {
     return this.data.slashCommandData;
+  }
+
+  get developerOnly(): boolean {
+    return this.data.developerOnly ?? false;
+  }
+
+  get maintenance(): boolean {
+    return this.data.maintenance ?? false;
   }
 
   get run(): SlashCommandRunner {

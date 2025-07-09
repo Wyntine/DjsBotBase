@@ -26,6 +26,7 @@ export interface CommandData<InGuild extends boolean = boolean> {
   guildOnly?: InGuild;
   dmOnly?: boolean;
   developerOnly?: boolean;
+  maintenance?: boolean;
   run: CommandRunner<InGuild>;
 }
 
@@ -59,5 +60,7 @@ export type SlashCommandRunner = (
 
 export interface SlashCommandData {
   slashCommandData: SlashCommandBuilderData;
+  developerOnly?: boolean;
+  maintenance?: boolean;
   run: SlashCommandRunner;
 }

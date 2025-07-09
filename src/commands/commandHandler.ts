@@ -213,15 +213,19 @@ export class CommandHandler {
 
     const command = this.getCommandOrAliases(commandName);
 
-    if (
-      (!command ||
-        (!(command.dmOnly === true && command.guildOnly === true) &&
-          ((command.dmOnly && message.guild) ??
-            (command.guildOnly && !message.guild)))) ??
-      (command.developerOnly && !this.developerIds.includes(author.id))
-    ) {
+    if (!command) return;
+
+    if (!command.dmOnly || !command.guildOnly) {
+      if (command.dmOnly && message.guild) return;
+      if (command.guildOnly && !message.guild) return;
+    }
+
+    if (command.maintenance && !this.developerIds.includes(author.id)) {
+      // TODO: Add maintenance message
       return;
     }
+
+    if (command.developerOnly && !this.developerIds.includes(author.id)) return;
 
     const args = base.slice(1);
     command.run(message, args);
@@ -346,6 +350,20 @@ export class CommandHandler {
     const command = this.getSlashCommand(name);
 
     if (!command) return;
+
+    if (
+      command.maintenance &&
+      !this.developerIds.includes(interaction.user.id)
+    ) {
+      // TODO: Add maintenance message
+      return;
+    }
+
+    if (
+      command.developerOnly &&
+      !this.developerIds.includes(interaction.user.id)
+    )
+      return;
 
     command.run(interaction);
   }

@@ -46,6 +46,14 @@ export class Command<InGuild extends boolean = boolean> {
       error("Command 'developer only' option must be a boolean.");
     }
 
+    if ("maintenance" in data && typeof data.maintenance !== "boolean") {
+      error("Command 'maintenance' option must be a boolean.");
+    }
+
+    if (!("run" in data) || typeof data.run !== "function") {
+      error("Command runner must be a function.");
+    }
+
     this.data = data;
   }
 
@@ -57,19 +65,23 @@ export class Command<InGuild extends boolean = boolean> {
     return this.data.aliases ?? [];
   }
 
+  get guildOnly(): boolean {
+    return this.data.guildOnly ?? true;
+  }
+
+  get dmOnly(): boolean {
+    return this.data.dmOnly ?? true;
+  }
+
+  get developerOnly(): boolean {
+    return this.data.developerOnly ?? false;
+  }
+
+  get maintenance(): boolean {
+    return this.data.maintenance ?? false;
+  }
+
   get run(): CommandRunner<InGuild> {
     return this.data.run;
-  }
-
-  get guildOnly(): boolean | undefined {
-    return this.data.guildOnly;
-  }
-
-  get dmOnly(): boolean | undefined {
-    return this.data.dmOnly;
-  }
-
-  get developerOnly(): boolean | undefined {
-    return this.data.developerOnly;
   }
 }
