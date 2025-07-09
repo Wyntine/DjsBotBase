@@ -34,6 +34,7 @@ export class CommandHandler {
   private prefix!: string;
   private suppressWarnings = false;
   private messages: CommandHandlerExceptionMessages = {};
+  private maintenance = false;
 
   constructor(data?: CommandHandlerConstructorData) {
     if (!data) return;
@@ -106,6 +107,14 @@ export class CommandHandler {
       }
 
       this.messages = messages;
+    }
+
+    if ("maintenance" in data) {
+      if (typeof data.maintenance !== "boolean") {
+        error("'maintenance' must be a boolean");
+      }
+
+      this.maintenance = data.maintenance;
     }
   }
 
@@ -262,7 +271,10 @@ export class CommandHandler {
       return;
     }
 
-    if (command.maintenance && !this.developerIds.includes(author.id)) {
+    if (
+      (this.maintenance || command.maintenance) &&
+      !this.developerIds.includes(author.id)
+    ) {
       const errorMessage = this.messages.maintenance ?? "Bu komut bakımdadır.";
 
       void message.reply(errorMessage);
@@ -418,7 +430,7 @@ export class CommandHandler {
     }
 
     if (
-      command.maintenance &&
+      (this.maintenance || command.maintenance) &&
       !this.developerIds.includes(interaction.user.id)
     ) {
       const errorMessage = this.messages.maintenance ?? "Bu komut bakımdadır.";

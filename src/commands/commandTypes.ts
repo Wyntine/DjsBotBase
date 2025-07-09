@@ -38,6 +38,7 @@ export interface CommandHandlerConstructorData {
   prefix?: string;
   suppressWarnings?: boolean;
   messages?: CommandHandlerExceptionMessages;
+  maintenance?: boolean;
 }
 
 export interface CommandHandlerExceptionMessages {
