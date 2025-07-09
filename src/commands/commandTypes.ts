@@ -27,6 +27,7 @@ export interface CommandData<InGuild extends boolean = boolean> {
   dmOnly?: boolean;
   developerOnly?: boolean;
   maintenance?: boolean;
+  cooldown?: number;
   run: CommandRunner<InGuild>;
 }
 
@@ -36,6 +37,12 @@ export interface CommandHandlerConstructorData {
   developerIds?: string[];
   prefix?: string;
   suppressWarnings?: boolean;
+  messages?: CommandHandlerExceptionMessages;
+}
+
+export interface CommandHandlerExceptionMessages {
+  cooldown?: string;
+  maintenance?: string;
 }
 
 //* Slash commands
@@ -62,5 +69,6 @@ export interface SlashCommandData {
   slashCommandData: SlashCommandBuilderData;
   developerOnly?: boolean;
   maintenance?: boolean;
+  cooldown?: number;
   run: SlashCommandRunner;
 }

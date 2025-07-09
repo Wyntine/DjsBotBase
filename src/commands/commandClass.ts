@@ -50,6 +50,14 @@ export class Command<InGuild extends boolean = boolean> {
       error("Command 'maintenance' option must be a boolean.");
     }
 
+    if (
+      "cooldown" in data ||
+      typeof data.cooldown !== "number" ||
+      data.cooldown <= 0
+    ) {
+      error("Command 'cooldown' must be a positive number.");
+    }
+
     if (!("run" in data) || typeof data.run !== "function") {
       error("Command runner must be a function.");
     }
@@ -79,6 +87,10 @@ export class Command<InGuild extends boolean = boolean> {
 
   get maintenance(): boolean {
     return this.data.maintenance ?? false;
+  }
+
+  get cooldown(): number {
+    return this.data.cooldown ?? -1;
   }
 
   get run(): CommandRunner<InGuild> {

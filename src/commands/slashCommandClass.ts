@@ -36,6 +36,14 @@ export class SlashCommand {
       error("Slash command 'maintenance' option must be a boolean.");
     }
 
+    if (
+      "cooldown" in data ||
+      typeof data.cooldown !== "number" ||
+      data.cooldown <= 0
+    ) {
+      error("Slash command 'cooldown' must be a positive number.");
+    }
+
     if (!("run" in data) || typeof data.run !== "function") {
       error("Slash command runner must be a function.");
     }
@@ -69,6 +77,10 @@ export class SlashCommand {
 
   get maintenance(): boolean {
     return this.data.maintenance ?? false;
+  }
+
+  get cooldown(): number {
+    return this.data.cooldown ?? -1;
   }
 
   get run(): SlashCommandRunner {

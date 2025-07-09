@@ -1,5 +1,6 @@
 import type {
   CommandHandlerConstructorData,
+  CommandHandlerExceptionMessages,
   CommandMap,
   SlashCommandMap,
 } from "./commandTypes";
@@ -14,6 +15,7 @@ import { SlashCommand } from "./slashCommandClass";
 import { Command } from "./commandClass";
 import { readdir } from "fs/promises";
 import { error, logError, logInfo, logWarn } from "../helpers/logger";
+import { addCooldown, checkCooldown, editCooldown } from "src/helpers/cooldown";
 
 export class CommandHandler {
   private commandMap: CommandMap = new Map();
@@ -31,6 +33,7 @@ export class CommandHandler {
   private developerIds: string[] = [];
   private prefix!: string;
   private suppressWarnings = false;
+  private messages: CommandHandlerExceptionMessages = {};
 
   constructor(data?: CommandHandlerConstructorData) {
     if (!data) return;
@@ -80,6 +83,29 @@ export class CommandHandler {
       }
 
       this.suppressWarnings = data.suppressWarnings;
+    }
+
+    if ("messages" in data) {
+      if (
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        !data.messages ||
+        typeof data.messages !== "object" ||
+        Array.isArray(data.messages)
+      ) {
+        error("'messages' must be a object.");
+      }
+
+      const messages = data.messages;
+
+      for (const item of ["cooldown", "maintenance"]) {
+        if (item in messages) {
+          const str = messages[item as keyof typeof messages];
+          if (typeof str !== "string")
+            error(`'messages.${item}' must be a string.`);
+        }
+      }
+
+      this.messages = messages;
     }
   }
 
@@ -220,14 +246,35 @@ export class CommandHandler {
       if (command.guildOnly && !message.guild) return;
     }
 
+    const [cooldownItem, cooldownCheck] = checkCooldown(author.id, command);
+
+    if (cooldownItem && !cooldownCheck) {
+      if (cooldownItem.messageShown) return;
+
+      const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
+      const errorMessage = (
+        this.messages.cooldown ??
+        "Bu komutu kullanmak için **{cooldown}** saniye bekleyiniz."
+      ).replace("{cooldown}", secondsLeft.toString());
+
+      void message.reply(errorMessage);
+      editCooldown(author.id, command, { messageShown: true });
+      return;
+    }
+
     if (command.maintenance && !this.developerIds.includes(author.id)) {
-      // TODO: Add maintenance message
+      const errorMessage = this.messages.maintenance ?? "Bu komut bakımdadır.";
+
+      void message.reply(errorMessage);
+      addCooldown(author.id, command, 5000);
       return;
     }
 
     if (command.developerOnly && !this.developerIds.includes(author.id)) return;
 
     const args = base.slice(1);
+
+    addCooldown(author.id, command);
     command.run(message, args);
   }
 
@@ -351,11 +398,33 @@ export class CommandHandler {
 
     if (!command) return;
 
+    const [cooldownItem, cooldownCheck] = checkCooldown(
+      interaction.user.id,
+      command
+    );
+
+    if (cooldownItem && !cooldownCheck) {
+      if (cooldownItem.messageShown) return;
+
+      const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
+      const errorMessage = (
+        this.messages.cooldown ??
+        "Bu komutu kullanmak için **{cooldown}** saniye bekleyiniz."
+      ).replace("{cooldown}", secondsLeft.toString());
+
+      void interaction.reply(errorMessage);
+      editCooldown(interaction.user.id, command, { messageShown: true });
+      return;
+    }
+
     if (
       command.maintenance &&
       !this.developerIds.includes(interaction.user.id)
     ) {
-      // TODO: Add maintenance message
+      const errorMessage = this.messages.maintenance ?? "Bu komut bakımdadır.";
+
+      void interaction.reply(errorMessage);
+      addCooldown(interaction.user.id, command, 5000);
       return;
     }
 
@@ -365,6 +434,7 @@ export class CommandHandler {
     )
       return;
 
+    addCooldown(interaction.user.id, command);
     command.run(interaction);
   }
 
