@@ -212,16 +212,11 @@ export class CommandHandler {
     if (!commandName) return;
 
     const command = this.getCommandOrAliases(commandName);
+    if (!command) return;
 
-    if (
-      (!command ||
-        (!(command.dmOnly === true && command.guildOnly === true) &&
-          ((command.dmOnly && message.guild) ??
-            (command.guildOnly && !message.guild)))) ??
-      (command.developerOnly && !this.developerIds.includes(author.id))
-    ) {
-      return;
-    }
+    if (command.developerOnly && !this.developerIds.includes(author.id)) return;
+    if (command.dmOnly && message.guild) return;
+    if (command.guildOnly && !message.guild) return;
 
     const args = base.slice(1);
     command.run(message, args);
