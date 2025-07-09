@@ -1,6 +1,6 @@
 # 🌍 Türkçe kılavuza hoş geldiniz!
 
-✨ **Sürüm 1.4.0-beta.1**
+✨ **Sürüm 1.5.0-beta.1**
 
 ```
 npm i djs-bot-base
@@ -14,12 +14,13 @@ npm i djs-bot-base
 
 # 🚀 Yenilikler
 
-- Geliştirme araçları güncellendi ve tertiplendi.
-- Kılavuzdaki bazı yazım yanlışları düzeltildi.
+- Bekleme süresi ve hata mesajı ayarı eklendi.
+- Bakım modu ve hata mesajı ayarı eklendi.
 
 # 🧰 Hata Düzeltmeleri
 
-- Şimdilik temiz!
+- Paketler güncellendi
+- Eğik çizgi komutlarında geliştirici özel ayarı kontrolü düzeltildi.
 
 # 🏅 Botun Örnek Ana Sayfası (index.js gibi)
 
@@ -76,6 +77,8 @@ export default new Command({
   guildOnly: false, // İsteğe bağlı, komutun sadece sunucuda çalışıp çalışmayacağı
   dmOnly: false, // İsteğe bağlı, komutun özelde çalışıp çalışmayacağı
   developerOnly: true, // İsteğe bağlı, komutun geliştiricilere özel olup olmayacağı
+  maintenance: false // İsteğe bağlı, komutun bakım modunda olup olmayacağı
+  cooldown: 5, // İsteğe bağlı, saniye cinsinden bekleme süresi
   async run(message) {
     // Zorunlu, komut algılandığında çalıştırılacak kod
   },
@@ -91,6 +94,9 @@ export default new Command({
 export default new SlashCommand({
   slashCommandData: (builder) =>
     builder.setName("komut-ismi").setDescription("Komut açıklaması"), // Zorunlu, eğik çizgi komutunun verisi
+  developerOnly: true, // İsteğe bağlı, komutun geliştiricilere özel olup olmayacağı
+  maintenance: false // İsteğe bağlı, komutun bakım modunda olup olmayacağı
+  cooldown: 5, // İsteğe bağlı, saniye cinsinden bekleme süresi
   async run(interaction) {
     // Zorunlu, komut algılandığında çalıştırılacak kod
   },
@@ -105,7 +111,11 @@ const commands = new CommandHandler({
   slashCommandsDir: "./slashCommands", // İsteğe bağlı, varsayılan: "slashCommands", taranacak eğik çizgi komutlarının klasör adı
   suppressWarnings: true, // İsteğe bağlı, komut üstlenicisindeki uyarıları gizler
   prefix: "!", // İsteğe bağlı, kullanılan ön eki kendiniz ayarlayacaksanız gerek yok
-  developerIds: ["geliştirici idleri"], // İsteğe bağlı, geliştiricilerin idleri
+  developerIds: ["geliştirici idleri"], // İsteğe bağlı, geliştiricilerin ID'leri
+  messages: { // İsteğe bağlı, hata mesajlarını kişiselleştirir
+    cooldown: "Komutu {cooldown} saniye sonra kullanabilirsin." // İsteğe bağlı, bekleme süresi hata mesajı (bekleme süresi değişkeni "{cooldown}" ile kullanılır)
+    maintenance: "Bu komut bakımda" // İsteğe bağlı, bakım modu hata mesajı
+  }
 });
 ```
 
@@ -114,7 +124,6 @@ const commands = new CommandHandler({
 - Komut sistemi eğik çizgi komutları ve normal komutlar olmak üzere ikiye ayrılır:
 
   ### <u>Normal Komutlar</u>
-
   - `<CommandHandler>.setCommands()`
 
     Belirtilen klasörü okur ve normal komutları üstleniciye kaydeder.
@@ -155,7 +164,6 @@ const commands = new CommandHandler({
     Kaydedilen varsayılan normal komut çalıştırıcısını bottan kaldırır.
 
   ### <u>Eğik Çizgi Komutları</u>
-
   - `<CommandHandler>.setSlashCommands()`
 
     Belirtilen klasörü okur ve eğik çizgi komutlarını üstleniciye kaydeder.

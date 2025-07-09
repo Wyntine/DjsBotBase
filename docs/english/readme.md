@@ -1,6 +1,6 @@
 # 🌍 Welcome to the English Guide!
 
-✨ **Version 1.4.0-beta.1**
+✨ **Version 1.5.0-beta.1**
 
 ```
 npm i djs-bot-base
@@ -14,12 +14,13 @@ npm i djs-bot-base
 
 # 🚀 New Features
 
-- Development tools updated and tidied up.
-- Fixed some typos in the docs.
+- Cooldown with error message configuration added.
+- Maintenance mode with error message configuration added.
 
 # 🧰 Bug Fixes
 
-- Clean for now!
+- Updated dependencies.
+- Fixed developer-only check in slash commands.
 
 # 🏅 Example Bot Main File (e.g., index.js)
 
@@ -76,6 +77,8 @@ export default new Command({
   guildOnly: false, // Optional, whether the command can only be used in guilds
   dmOnly: false, // Optional, whether the command can only be used in DMs
   developerOnly: true, // Optional, whether the command is developer-only
+  maintenance: false, // Optional, whether the command is in the maintenance mode
+  cooldown: 5, // Optional, cooldown in seconds
   async run(message) {
     // Required, code to run when the command is triggered
   },
@@ -91,6 +94,9 @@ export default new Command({
 export default new SlashCommand({
   slashCommandData: (builder) =>
     builder.setName("command-name").setDescription("Command description"), // Required, slash command data
+  developerOnly: true, // Optional, whether the command is developer-only
+  maintenance: false, // Optional, whether the command is in the maintenance mode
+  cooldown: 5, // Optional, cooldown in seconds
   async run(interaction) {
     // Required, code to run when the command is triggered
   },
@@ -106,6 +112,10 @@ const commands = new CommandHandler({
   suppressWarnings: true, // Optional, suppresses warnings in the command handler
   prefix: "!", // Optional, only needed if you set a custom prefix
   developerIds: ["developer ids"], // Optional, developer IDs
+  messages: { // Optional, personalizes error messages
+    cooldown: "You can use the command after {cooldown} seconds." // Optional, cooldown error message (cooldown variable is used as "{cooldown}")
+    maintenance: "This command is on maintenance" // Optional, maintenance mode error message
+  }
 });
 ```
 
@@ -114,7 +124,6 @@ const commands = new CommandHandler({
 - The command system is divided into slash commands and normal commands:
 
   ### <u>Normal Commands</u>
-
   - `<CommandHandler>.setCommands()`
 
     Reads the specified folder and registers normal commands to the handler.
@@ -155,7 +164,6 @@ const commands = new CommandHandler({
     Removes the registered default normal command handler from the bot.
 
   ### <u>Slash Commands</u>
-
   - `<CommandHandler>.setSlashCommands()`
 
     Reads the specified folder and registers slash commands to the handler.
