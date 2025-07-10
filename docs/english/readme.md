@@ -112,10 +112,11 @@ const commands = new CommandHandler({
   suppressWarnings: true, // Optional, suppresses warnings in the command handler
   prefix: "!", // Optional, only needed if you set a custom prefix
   developerIds: ["developer ids"], // Optional, developer IDs
-  messages: { // Optional, personalizes error messages
-    cooldown: "You can use the command after {cooldown} seconds." // Optional, cooldown error message (cooldown variable is used as "{cooldown}")
-    maintenance: "This command is on maintenance" // Optional, maintenance mode error message
-  }
+  messages: {
+    // Optional, personalizes error messages
+    cooldown: "You can use the command after {cooldown} seconds.", // Optional, cooldown error message (cooldown variable is used as "{cooldown}")
+    maintenance: "This command is on maintenance", // Optional, maintenance mode error message
+  },
 });
 ```
 

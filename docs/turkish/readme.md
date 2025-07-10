@@ -77,7 +77,7 @@ export default new Command({
   guildOnly: false, // İsteğe bağlı, komutun sadece sunucuda çalışıp çalışmayacağı
   dmOnly: false, // İsteğe bağlı, komutun özelde çalışıp çalışmayacağı
   developerOnly: true, // İsteğe bağlı, komutun geliştiricilere özel olup olmayacağı
-  maintenance: false // İsteğe bağlı, komutun bakım modunda olup olmayacağı
+  maintenance: false, // İsteğe bağlı, komutun bakım modunda olup olmayacağı
   cooldown: 5, // İsteğe bağlı, saniye cinsinden bekleme süresi
   async run(message) {
     // Zorunlu, komut algılandığında çalıştırılacak kod
@@ -95,7 +95,7 @@ export default new SlashCommand({
   slashCommandData: (builder) =>
     builder.setName("komut-ismi").setDescription("Komut açıklaması"), // Zorunlu, eğik çizgi komutunun verisi
   developerOnly: true, // İsteğe bağlı, komutun geliştiricilere özel olup olmayacağı
-  maintenance: false // İsteğe bağlı, komutun bakım modunda olup olmayacağı
+  maintenance: false, // İsteğe bağlı, komutun bakım modunda olup olmayacağı
   cooldown: 5, // İsteğe bağlı, saniye cinsinden bekleme süresi
   async run(interaction) {
     // Zorunlu, komut algılandığında çalıştırılacak kod
@@ -112,10 +112,11 @@ const commands = new CommandHandler({
   suppressWarnings: true, // İsteğe bağlı, komut üstlenicisindeki uyarıları gizler
   prefix: "!", // İsteğe bağlı, kullanılan ön eki kendiniz ayarlayacaksanız gerek yok
   developerIds: ["geliştirici idleri"], // İsteğe bağlı, geliştiricilerin ID'leri
-  messages: { // İsteğe bağlı, hata mesajlarını kişiselleştirir
-    cooldown: "Komutu {cooldown} saniye sonra kullanabilirsin." // İsteğe bağlı, bekleme süresi hata mesajı (bekleme süresi değişkeni "{cooldown}" ile kullanılır)
-    maintenance: "Bu komut bakımda" // İsteğe bağlı, bakım modu hata mesajı
-  }
+  messages: {
+    // İsteğe bağlı, hata mesajlarını kişiselleştirir
+    cooldown: "Komutu {cooldown} saniye sonra kullanabilirsin.", // İsteğe bağlı, bekleme süresi hata mesajı (bekleme süresi değişkeni "{cooldown}" ile kullanılır)
+    maintenance: "Bu komut bakımda", // İsteğe bağlı, bakım modu hata mesajı
+  },
 });
 ```
 
