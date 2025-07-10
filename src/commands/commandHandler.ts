@@ -15,7 +15,7 @@ import { SlashCommand } from "./slashCommandClass";
 import { Command } from "./commandClass";
 import { readdir } from "fs/promises";
 import { error, logError, logInfo, logWarn } from "../helpers/logger";
-import { addCooldown, checkCooldown, editCooldown } from "src/helpers/cooldown";
+import { addCooldown, checkCooldown, editCooldown } from "../helpers/cooldown";
 
 export class CommandHandler {
   private commandMap: CommandMap = new Map();

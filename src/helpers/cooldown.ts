@@ -1,10 +1,10 @@
-import { SlashCommand } from "src/commands/slashCommandClass";
+import { SlashCommand } from "../commands/slashCommandClass";
 import {
   CommandTypes,
   CooldownMapItem,
   EditCooldownMapItem,
 } from "./helperTypes";
-import { Command } from "src/commands/commandClass";
+import { Command } from "../commands/commandClass";
 
 const cooldowns = new Map<string, CooldownMapItem[]>();
 
