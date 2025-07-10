@@ -51,9 +51,8 @@ export class Command<InGuild extends boolean = boolean> {
     }
 
     if (
-      "cooldown" in data ||
-      typeof data.cooldown !== "number" ||
-      data.cooldown <= 0
+      "cooldown" in data &&
+      (typeof data.cooldown !== "number" || data.cooldown <= 0)
     ) {
       error("Command 'cooldown' must be a positive number.");
     }

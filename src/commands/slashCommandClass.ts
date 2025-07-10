@@ -37,9 +37,8 @@ export class SlashCommand {
     }
 
     if (
-      "cooldown" in data ||
-      typeof data.cooldown !== "number" ||
-      data.cooldown <= 0
+      "cooldown" in data &&
+      (typeof data.cooldown !== "number" || data.cooldown <= 0)
     ) {
       error("Slash command 'cooldown' must be a positive number.");
     }
