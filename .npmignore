@@ -1,0 +1,11 @@
+node_modules
+package-lock.json
+djs-bot-base-*
+pnpm-lock.yaml
+
+src
+eslint.config.mjs
+.prettierrc.yaml
+tsconfig.json
+.gitignore
+docs
