@@ -1,6 +1,6 @@
 {
-  "name": "djs-bot-base",
-  "version": "1.5.0-beta.3",
+  "name": "djsbotbase-test",
+  "version": "1.0.0-beta",
   "description": "Discord.js tabanlı komut ve etkinlik sistemlerine sahip bir bot temeli",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,10 +21,25 @@
   },
   "author": "Wyntine",
   "license": "MIT",
+  "keywords": [
+    "discord",
+    "discord.js",
+    "bot",
+    "discord-bot",
+    "command-handler",
+    "event-handler",
+    "discord-framework",
+    "slash-commands",
+    "message-commands",
+    "typescript"
+  ],
   "bugs": {
     "url": "https://github.com/Wyntine/DjsBotBase/issues"
   },
   "homepage": "https://github.com/Wyntine/DjsBotBase#readme",
+  "peerDependencies": {
+    "discord.js": "^14.21.0"
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.30.1",

@@ -7,10 +7,9 @@ import type {
 import type {
   ApplicationCommandDataResolvable,
   Client,
-  Interaction,
-  Message,
+  ChatInputCommandInteraction,
 } from "discord.js";
-
+import { Message, Interaction } from "discord.js";
 import { SlashCommand } from "./slashCommandClass";
 import { Command } from "./commandClass";
 import { readdir } from "fs/promises";
@@ -18,287 +17,470 @@ import { error, logError, logInfo, logWarn } from "../helpers/logger";
 import { addCooldown, checkCooldown, editCooldown } from "../helpers/cooldown";
 
 export class CommandHandler {
-  private commandMap: CommandMap = new Map();
-  private commandsDir = "commands";
-  private commandRunner = (message: Message) => {
+  private readonly commandMap: CommandMap = new Map();
+  private readonly slashCommandMap: SlashCommandMap = new Map();
+  
+  private readonly commandsDir: string;
+  private readonly slashCommandsDir: string;
+  private readonly developerIds: readonly string[];
+  private readonly prefix: string;
+  private readonly suppressWarnings: boolean;
+  private readonly messages: CommandHandlerExceptionMessages;
+  private readonly maintenance: boolean;
+
+  private readonly commandRunner = (message: Message) => {
     this.runDefaultHandler(message);
   };
 
-  private slashCommandMap: SlashCommandMap = new Map();
-  private slashCommandsDir = "slashCommands";
-  private slashCommandRunner = (interaction: Interaction) => {
+  private readonly slashCommandRunner = (interaction: Interaction) => {
     this.runDefaultSlashHandler(interaction);
   };
 
-  private developerIds: string[] = [];
-  private prefix!: string;
-  private suppressWarnings = false;
-  private messages: CommandHandlerExceptionMessages = {};
-  private maintenance = false;
-
   constructor(data?: CommandHandlerConstructorData) {
-    if (!data) return;
+    const config = this.validateAndNormalizeConfig(data);
+    
+    this.commandsDir = config.commandsDir;
+    this.slashCommandsDir = config.slashCommandsDir;
+    this.developerIds = Object.freeze(config.developerIds);
+    this.prefix = config.prefix;
+    this.suppressWarnings = config.suppressWarnings;
+    this.messages = config.messages;
+    this.maintenance = config.maintenance;
+  }
+
+  private validateAndNormalizeConfig(data?: CommandHandlerConstructorData) {
+    const config = {
+      commandsDir: "commands",
+      slashCommandsDir: "slashCommands",
+      developerIds: [] as string[],
+      prefix: "",
+      suppressWarnings: false,
+      messages: {} as CommandHandlerExceptionMessages,
+      maintenance: false,
+    };
+
+    if (!data) return config;
 
     if ("commandsDir" in data) {
       if (typeof data.commandsDir !== "string") {
-        error("'commandsDir' must be a string.");
+        error("commandsDir must be a string.");
       }
-
-      this.commandsDir = data.commandsDir;
+      config.commandsDir = data.commandsDir;
     }
 
     if ("slashCommandsDir" in data) {
       if (typeof data.slashCommandsDir !== "string") {
-        error("'slashCommandsDir' must be a string.");
+        error("slashCommandsDir must be a string.");
       }
-
-      this.slashCommandsDir = data.slashCommandsDir;
+      config.slashCommandsDir = data.slashCommandsDir;
     }
 
     if ("developerIds" in data) {
       if (!Array.isArray(data.developerIds)) {
-        error("'developerIds' must be a string array.");
+        error("developerIds must be a string array.");
       }
 
-      if (
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-confusing-void-expression
-        data.developerIds.find((developer) => typeof developer !== "string")
-      ) {
-        error("'developerIds' has an id that is not a string.");
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const invalidId = data.developerIds.find(id => typeof id !== "string");
+      if (invalidId !== undefined) {
+        error("All developer IDs must be strings.");
       }
 
-      this.developerIds = data.developerIds;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      config.developerIds = [...data.developerIds];
     }
 
     if ("prefix" in data) {
       if (typeof data.prefix !== "string") {
-        error("'prefix' must be a string.");
+        error("prefix must be a string.");
       }
-
-      this.prefix = data.prefix;
+      config.prefix = data.prefix;
     }
 
     if ("suppressWarnings" in data) {
       if (typeof data.suppressWarnings !== "boolean") {
-        error("'suppressWarnings' must be a boolean.");
+        error("suppressWarnings must be a boolean.");
       }
-
-      this.suppressWarnings = data.suppressWarnings;
+      config.suppressWarnings = data.suppressWarnings;
     }
 
     if ("messages" in data) {
-      if (
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        !data.messages ||
-        typeof data.messages !== "object" ||
-        Array.isArray(data.messages)
-      ) {
-        error("'messages' must be a object.");
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (!data.messages || typeof data.messages !== "object" || Array.isArray(data.messages)) {
+        error("messages must be an object.");
       }
 
-      const messages = data.messages;
-
-      for (const item of ["cooldown", "maintenance"]) {
-        if (item in messages) {
-          const str = messages[item as keyof typeof messages];
-          if (typeof str !== "string")
-            error(`'messages.${item}' must be a string.`);
-        }
-      }
-
-      this.messages = messages;
+      this.validateMessages(data.messages);
+      config.messages = { ...data.messages };
     }
 
     if ("maintenance" in data) {
       if (typeof data.maintenance !== "boolean") {
-        error("'maintenance' must be a boolean");
+        error("maintenance must be a boolean.");
       }
-
-      this.maintenance = data.maintenance;
+      config.maintenance = data.maintenance;
     }
+
+    return config;
   }
 
-  //* Normal commands
-
-  public async setCommands(): Promise<void> {
-    const { commandsDir } = this;
-
-    try {
-      const newCommandsDir = commandsDir.startsWith("./")
-        ? commandsDir
-        : `./${commandsDir}`;
-      const commands = await readdir(commandsDir, { withFileTypes: true });
-
-      logInfo("Reading commands...");
-
-      for (const command of commands) {
-        const { name } = command;
-
-        try {
-          if (!command.isFile()) {
-            if (!this.suppressWarnings) logWarn(`'${name}' is not a file.`);
-            continue;
-          }
-
-          const fileRegex = /^(\w|\s)+.(js|ts)$/;
-
-          if (!fileRegex.test(name)) {
-            if (!this.suppressWarnings)
-              logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
-            continue;
-          }
-
-          const commandPath = `../../../../${newCommandsDir}/${name}`;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          const commandData: unknown = (await import(commandPath))?.default;
-
-          if (!commandData) {
-            if (!this.suppressWarnings)
-              logWarn(`'${name}' does not have an default export.`);
-            continue;
-          }
-
-          if (!(commandData instanceof Command)) {
-            if (!this.suppressWarnings) {
-              logWarn(
-                `'${name}' does not have default export of Command instance.`
-              );
-            }
-            continue;
-          }
-
-          if (this.getCommandOrAliases(commandData.name)) {
-            if (!this.suppressWarnings)
-              logWarn(`'${name}' named '${commandData.name}' exists.`);
-            continue;
-          }
-
-          if (
-            commandData.aliases.find((alias) => this.getCommandOrAliases(alias))
-          ) {
-            if (!this.suppressWarnings) {
-              logWarn(
-                `'${name}' named '${commandData.name}' have an alias that exist on another command.`
-              );
-            }
-            continue;
-          }
-
-          this.commandMap.set(commandData.name, commandData as Command);
-          logInfo(`Command file '${name}' (${commandData.name}) loaded.`);
-        } catch (innerError) {
-          logError(`Reading command '${name}' failed!`);
-          console.error(innerError);
+  private validateMessages(messages: CommandHandlerExceptionMessages): void {
+    const validMessageKeys = ["cooldown", "maintenance"] as const;
+    
+    for (const key of validMessageKeys) {
+      if (key in messages) {
+        const message = messages[key];
+        if (typeof message !== "string") {
+          error(`messages.${key} must be a string.`);
         }
       }
-
-      logInfo(
-        `${this.commandMap.size.toString()} ${
-          this.commandMap.size === 1 ? "command" : "commands"
-        } registered.`
-      );
-    } catch (outerError) {
-      logError("Reading commands failed!");
-      console.error(outerError);
     }
   }
 
-  public getCommand(commandName: string): Command | undefined {
-    return this.commandMap.get(commandName);
+  public async setCommands(): Promise<void> {
+    try {
+      await this.loadCommandsFromDirectory();
+    } catch (error) {
+      logError("Failed to set commands!");
+      console.error(error);
+    }
   }
 
-  public getCommands(): Command[] {
-    return Array.from(this.commandMap.values());
+  private async loadCommandsFromDirectory(): Promise<void> {
+    const normalizedDir = this.normalizeDirectoryPath(this.commandsDir);
+    const commandFiles = await this.getValidCommandFiles(normalizedDir);
+    
+    logInfo("Reading commands...");
+    
+    let loadedCount = 0;
+    
+    for (const fileName of commandFiles) {
+      try {
+        const command = await this.loadCommandFromFile(normalizedDir, fileName);
+        if (command && this.validateAndAddCommand(command, fileName)) {
+          loadedCount++;
+        }
+      } catch (error) {
+        logError(`Failed to load command '${fileName}'!`);
+        console.error(error);
+      }
+    }
+
+    logInfo(`${loadedCount.toString()} ${loadedCount === 1 ? "command" : "commands"} registered.`);
   }
 
-  public getCommandOrAliases(commandOrAliasName: string): Command | undefined {
-    return Array.from(this.commandMap.values()).find(({ name, aliases }) =>
-      [name, ...aliases].includes(commandOrAliasName)
-    );
+  private async getValidCommandFiles(directory: string): Promise<string[]> {
+    const dirents = await readdir(directory, { withFileTypes: true });
+    return dirents
+      .filter(dirent => dirent.isFile())
+      .map(dirent => dirent.name)
+      .filter(name => this.isValidScriptFile(name, "command"));
   }
 
-  public clearCommands(): this {
-    this.commandMap.clear();
-    return this;
+  private isValidScriptFile(fileName: string, type: "command" | "slash command"): boolean {
+    const fileRegex = /^[\w\s]+\.(js|ts)$/;
+    
+    if (!fileRegex.test(fileName)) {
+      if (!this.suppressWarnings) {
+        logWarn(`'${fileName}' is not a valid JavaScript/TypeScript file for ${type}.`);
+      }
+      return false;
+    }
+    
+    return true;
   }
 
-  public removeCommand(commandName: string): this {
-    this.commandMap.delete(commandName);
-    return this;
+  private async loadCommandFromFile(directory: string, fileName: string): Promise<Command | null> {
+    const commandPath = `../../../../${directory}/${fileName}`;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const commandModule = await import(commandPath);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const commandData = commandModule?.default;
+
+    if (!commandData) {
+      if (!this.suppressWarnings) {
+        logWarn(`'${fileName}' does not have a default export.`);
+      }
+      return null;
+    }
+
+    if (!(commandData instanceof Command)) {
+      if (!this.suppressWarnings) {
+        logWarn(`'${fileName}' does not export a Command instance as default.`);
+      }
+      return null;
+    }
+
+    return commandData;
   }
 
-  public runDefaultHandler(
-    message: Message,
-    prefix: string = this.prefix
-  ): void {
-    const author = message.author;
+  private validateAndAddCommand(command: Command, fileName: string): boolean {
+    if (this.getCommandOrAliases(command.name)) {
+      if (!this.suppressWarnings) {
+        logWarn(`Command '${command.name}' from '${fileName}' already exists.`);
+      }
+      return false;
+    }
 
-    if (author.bot) return;
+    const conflictingAlias = command.aliases.find(alias => this.getCommandOrAliases(alias));
+    if (conflictingAlias) {
+      if (!this.suppressWarnings) {
+        logWarn(`Command '${command.name}' has conflicting alias '${conflictingAlias}'.`);
+      }
+      return false;
+    }
 
-    if (typeof prefix !== "string") error("Command handler prefix is not set!");
+    this.commandMap.set(command.name, command);
+    logInfo(`Command '${fileName}' (${command.name}) loaded successfully.`);
+    return true;
+  }
 
-    const content = message.content;
+  public async setSlashCommands(): Promise<void> {
+    try {
+      await this.loadSlashCommandsFromDirectory();
+    } catch (error) {
+      logError("Failed to set slash commands!");
+      console.error(error);
+    }
+  }
 
-    if (!content.startsWith(prefix)) return;
+  private async loadSlashCommandsFromDirectory(): Promise<void> {
+    const normalizedDir = this.normalizeDirectoryPath(this.slashCommandsDir);
+    const slashCommandFiles = await this.getValidSlashCommandFiles(normalizedDir);
+    
+    logInfo("Reading slash commands...");
+    
+    let loadedCount = 0;
+    
+    for (const fileName of slashCommandFiles) {
+      try {
+        const slashCommand = await this.loadSlashCommandFromFile(normalizedDir, fileName);
+        if (slashCommand && this.validateAndAddSlashCommand(slashCommand, fileName)) {
+          loadedCount++;
+        }
+      } catch (error) {
+        logError(`Failed to load slash command '${fileName}'!`);
+        console.error(error);
+      }
+    }
 
-    const base = content.slice(prefix.length).split(" ");
-    const commandName = base[0];
+    logInfo(`${loadedCount.toString()} slash ${loadedCount === 1 ? "command" : "commands"} registered.`);
+  }
 
-    if (!commandName) return;
+  private async getValidSlashCommandFiles(directory: string): Promise<string[]> {
+    const dirents = await readdir(directory, { withFileTypes: true });
+    return dirents
+      .filter(dirent => dirent.isFile())
+      .map(dirent => dirent.name)
+      .filter(name => this.isValidScriptFile(name, "slash command"));
+  }
 
+  private async loadSlashCommandFromFile(directory: string, fileName: string): Promise<SlashCommand | null> {
+    const slashCommandPath = `../../../../${directory}/${fileName}`;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const slashCommandModule = await import(slashCommandPath);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const slashCommandData = slashCommandModule?.default;
+
+    if (!slashCommandData) {
+      if (!this.suppressWarnings) {
+        logWarn(`'${fileName}' does not have a default export.`);
+      }
+      return null;
+    }
+
+    if (!(slashCommandData instanceof SlashCommand)) {
+      if (!this.suppressWarnings) {
+        logWarn(`'${fileName}' does not export a SlashCommand instance as default.`);
+      }
+      return null;
+    }
+
+    return slashCommandData;
+  }
+
+  private validateAndAddSlashCommand(slashCommand: SlashCommand, fileName: string): boolean {
+    const builderData = slashCommand.convertCommandData();
+    const commandName = builderData.name;
+
+    if (typeof commandName !== "string" || !commandName.trim()) {
+      if (!this.suppressWarnings) {
+        logWarn(`'${fileName}' has no valid name set in its builder.`);
+      }
+      return false;
+    }
+
+    this.slashCommandMap.set(commandName, slashCommand);
+    logInfo(`Slash command '${fileName}' (${commandName}) loaded successfully.`);
+    return true;
+  }
+
+  private normalizeDirectoryPath(directory: string): string {
+    return directory.startsWith("./") ? directory : `./${directory}`;
+  }
+
+  public runDefaultHandler(message: Message, prefixOverride?: string): void {
+    const actualPrefix = prefixOverride ?? this.prefix;
+    
+    if (!this.shouldProcessMessage(message, actualPrefix)) {
+      return;
+    }
+
+    const commandInfo = this.parseCommand(message.content, actualPrefix);
+    if (!commandInfo) {
+      return;
+    }
+
+    const { commandName, args } = commandInfo;
     const command = this.getCommandOrAliases(commandName);
-
-    if (!command) return;
-
-    if (!command.dmOnly || !command.guildOnly) {
-      if (command.dmOnly && message.guild) return;
-      if (command.guildOnly && !message.guild) return;
+    
+    if (!command) {
+      return;
     }
 
-    const [cooldownItem, cooldownCheck] = checkCooldown(author.id, command);
+    if (!this.isCommandExecutableInContext(command, message)) {
+      return;
+    }
 
-    if (cooldownItem && !cooldownCheck) {
-      if (cooldownItem.messageShown) return;
+    if (!this.handleCooldown(message.author.id, command, message)) {
+      return;
+    }
 
-      const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
+    if (!this.handleMaintenance(command, message.author.id, message)) {
+      return;
+    }
+
+    if (!this.handleDeveloperOnly(command, message.author.id)) {
+      return;
+    }
+
+    addCooldown(message.author.id, command);
+    command.run(message, args);
+  }
+
+  private shouldProcessMessage(message: Message, prefix: string): boolean {
+    if (message.author.bot) {
+      return false;
+    }
+
+    if (typeof prefix !== "string") {
+      error("Command handler prefix is not set!");
+    }
+
+    return message.content.startsWith(prefix);
+  }
+
+  private parseCommand(content: string, prefix: string): { commandName: string; args: string[] } | null {
+    const withoutPrefix = content.slice(prefix.length);
+    const parts = withoutPrefix.split(" ");
+    const commandName = parts[0];
+
+    if (!commandName) {
+      return null;
+    }
+
+    return {
+      commandName,
+      args: parts.slice(1),
+    };
+  }
+
+  private isCommandExecutableInContext(command: Command, message: Message): boolean {
+    const isInGuild = Boolean(message.guild);
+    
+    if (command.dmOnly && isInGuild) {
+      return false;
+    }
+    
+    if (command.guildOnly && !isInGuild) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private handleCooldown(userId: string, command: Command | SlashCommand, context: Message | ChatInputCommandInteraction): boolean {
+    const [cooldownItem, isValid] = checkCooldown(userId, command);
+
+    if (cooldownItem && !isValid) {
+      if (cooldownItem.messageShown) {
+        return false;
+      }
+
+      const secondsLeft = Math.ceil((cooldownItem.endsAt - Date.now()) / 1000);
       const errorMessage = (
-        this.messages.cooldown ??
+        this.messages.cooldown ?? 
         "Bu komutu kullanmak için **{cooldown}** saniye bekleyiniz."
       ).replace("{cooldown}", secondsLeft.toString());
 
-      void message.reply(errorMessage);
-      editCooldown(author.id, command, { messageShown: true });
-      return;
+      void context.reply(errorMessage);
+      
+      editCooldown(userId, command, { messageShown: true });
+      return false;
     }
 
-    if (
-      (this.maintenance || command.maintenance) &&
-      !this.developerIds.includes(author.id)
-    ) {
+    return true;
+  }
+
+  private handleMaintenance(command: Command | SlashCommand, userId: string, context: Message | ChatInputCommandInteraction): boolean {
+    if ((this.maintenance || command.maintenance) && !this.developerIds.includes(userId)) {
       const errorMessage = this.messages.maintenance ?? "Bu komut bakımdadır.";
 
-      void message.reply(errorMessage);
-      addCooldown(author.id, command, 5000);
+      void context.reply(errorMessage);
+      
+      addCooldown(userId, command, 5);
+      return false;
+    }
+
+    return true;
+  }
+
+  private handleDeveloperOnly(command: Command | SlashCommand, userId: string): boolean {
+    return !command.developerOnly || this.developerIds.includes(userId);
+  }
+
+  public runDefaultSlashHandler(interaction: Interaction): void {
+    if (!this.shouldProcessInteraction(interaction)) {
       return;
     }
 
-    if (command.developerOnly && !this.developerIds.includes(author.id)) return;
+    const chatInteraction = interaction as ChatInputCommandInteraction;
+    const commandName = chatInteraction.commandName;
+    const command = this.getSlashCommand(commandName);
 
-    const args = base.slice(1);
+    if (!command) {
+      return;
+    }
 
-    addCooldown(author.id, command);
-    command.run(message, args);
+    if (!this.handleCooldown(chatInteraction.user.id, command, chatInteraction)) {
+      return;
+    }
+
+    if (!this.handleMaintenance(command, chatInteraction.user.id, chatInteraction)) {
+      return;
+    }
+
+    if (!this.handleDeveloperOnly(command, chatInteraction.user.id)) {
+      return;
+    }
+
+    addCooldown(chatInteraction.user.id, command);
+    command.run(chatInteraction);
+  }
+
+  private shouldProcessInteraction(interaction: Interaction): boolean {
+    return !interaction.user.bot && interaction.isChatInputCommand();
   }
 
   public setDefaultHandler(client: Client): this {
     if (!this.suppressWarnings) {
       logWarn(
         [
-          "You are using the default command handler which is included in this package.",
-          "> That can cause unexpected errors or restrict you when modifying command handler.",
-          "-> For example you can not change your bot's prefix in servers!",
-          "> We recommend you to use '<CommandHandler>.runDefaultHandler(<Message>, <string?>)' in an event to be more flexible in your code.",
-          "> You can ignore this message if you know what you are doing by setting 'suppressWarnings' to true in handler constructor.",
+          "You are using the default command handler included in this package.",
+          "This may cause unexpected errors or restrict you when modifying the command handler.",
+          "For example, you cannot change your bot's prefix per server!",
+          "We recommend using '<CommandHandler>.runDefaultHandler(<Message>, <string?>)' in an event for more flexibility.",
+          "You can ignore this message by setting 'suppressWarnings' to true in the handler constructor.",
         ].join("\n")
       );
     }
@@ -312,7 +494,7 @@ export class CommandHandler {
       logWarn(
         [
           "Default command handler removed from the bot.",
-          "> Commands will not detected by the bot.",
+          "Commands will not be detected by the bot.",
         ].join("\n")
       );
     }
@@ -321,143 +503,14 @@ export class CommandHandler {
     return this;
   }
 
-  //* Slash commands
-
-  public async setSlashCommands(): Promise<void> {
-    const { slashCommandsDir } = this;
-
-    try {
-      const newSlashCommandsDir = slashCommandsDir.startsWith("./")
-        ? slashCommandsDir
-        : `./${slashCommandsDir}`;
-      const slashCommands = await readdir(newSlashCommandsDir, {
-        withFileTypes: true,
-      });
-
-      logInfo("Reading slash commands...");
-
-      for (const slashCommand of slashCommands) {
-        const { name } = slashCommand;
-
-        try {
-          if (!slashCommand.isFile()) {
-            if (!this.suppressWarnings) logWarn(`'${name}' is not a file.`);
-            continue;
-          }
-
-          const fileRegex = /^(\w|\s)+.(js|ts)$/;
-
-          if (!fileRegex.test(name)) {
-            if (!this.suppressWarnings)
-              logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
-            continue;
-          }
-
-          const slashCommandPath = `../../../../${newSlashCommandsDir}/${name}`;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-          const slashCommandData = (await import(slashCommandPath))?.default;
-
-          if (!slashCommandData) {
-            if (!this.suppressWarnings)
-              logWarn(`'${name}' does not have an default export.`);
-            continue;
-          }
-
-          if (!(slashCommandData instanceof SlashCommand)) {
-            if (!this.suppressWarnings) {
-              logWarn(
-                `'${name}' does not have default export of SlashCommand instance.`
-              );
-            }
-            continue;
-          }
-
-          const slashCommandBuilderData = slashCommandData.convertCommandData();
-          const builderName = slashCommandBuilderData.name;
-
-          if (typeof builderName !== "string") {
-            if (!this.suppressWarnings)
-              logWarn(`'${name}' has no name set in its builder.`);
-            continue;
-          }
-
-          this.slashCommandMap.set(builderName, slashCommandData);
-          logInfo(`Slash command file '${name}' (${builderName}) loaded.`);
-        } catch (innerError) {
-          logError(`Reading slash command '${name}' failed!`);
-          console.error(innerError);
-        }
-      }
-
-      logInfo(
-        `${this.slashCommandMap.size.toString()} slash ${
-          this.slashCommandMap.size === 1 ? "command" : "commands"
-        } registered.`
-      );
-    } catch (outerError) {
-      logError("Reading slash commands failed!");
-      console.error(outerError);
-    }
-  }
-
-  public runDefaultSlashHandler(interaction: Interaction): void {
-    const user = interaction.user;
-
-    if (user.bot || !interaction.isChatInputCommand()) return;
-
-    const name = interaction.commandName;
-    const command = this.getSlashCommand(name);
-
-    if (!command) return;
-
-    const [cooldownItem, cooldownCheck] = checkCooldown(
-      interaction.user.id,
-      command
-    );
-
-    if (cooldownItem && !cooldownCheck) {
-      if (cooldownItem.messageShown) return;
-
-      const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
-      const errorMessage = (
-        this.messages.cooldown ??
-        "Bu komutu kullanmak için **{cooldown}** saniye bekleyiniz."
-      ).replace("{cooldown}", secondsLeft.toString());
-
-      void interaction.reply(errorMessage);
-      editCooldown(interaction.user.id, command, { messageShown: true });
-      return;
-    }
-
-    if (
-      (this.maintenance || command.maintenance) &&
-      !this.developerIds.includes(interaction.user.id)
-    ) {
-      const errorMessage = this.messages.maintenance ?? "Bu komut bakımdadır.";
-
-      void interaction.reply(errorMessage);
-      addCooldown(interaction.user.id, command, 5000);
-      return;
-    }
-
-    if (
-      command.developerOnly &&
-      !this.developerIds.includes(interaction.user.id)
-    )
-      return;
-
-    addCooldown(interaction.user.id, command);
-    command.run(interaction);
-  }
-
   public setDefaultSlashHandler(client: Client): this {
     if (!this.suppressWarnings) {
       logWarn(
         [
-          "You are using the default slash command handler which is included in this package.",
-          "> That can cause unexpected errors or restrict you when modifying slash command handler.",
-          "> We recommend you to use '<CommandHandler>.runDefaultSlashHandler(<Interaction>)' in an event to be more flexible in your code.",
-          "> You can ignore this message if you know what you are doing by setting 'suppressWarnings' to true in handler constructor.",
+          "You are using the default slash command handler included in this package.",
+          "This may cause unexpected errors or restrict you when modifying the slash command handler.",
+          "We recommend using '<CommandHandler>.runDefaultSlashHandler(<Interaction>)' in an event for more flexibility.",
+          "You can ignore this message by setting 'suppressWarnings' to true in the handler constructor.",
         ].join("\n")
       );
     }
@@ -471,12 +524,36 @@ export class CommandHandler {
       logWarn(
         [
           "Default slash command handler removed from the bot.",
-          "> Slash commands will not detected by the bot.",
+          "Slash commands will not be detected by the bot.",
         ].join("\n")
       );
     }
 
     client.removeListener("interactionCreate", this.slashCommandRunner);
+    return this;
+  }
+
+  public getCommand(commandName: string): Command | undefined {
+    return this.commandMap.get(commandName);
+  }
+
+  public getCommands(): Command[] {
+    return Array.from(this.commandMap.values());
+  }
+
+  public getCommandOrAliases(commandOrAliasName: string): Command | undefined {
+    return Array.from(this.commandMap.values()).find(command =>
+      [command.name, ...command.aliases].includes(commandOrAliasName)
+    );
+  }
+
+  public clearCommands(): this {
+    this.commandMap.clear();
+    return this;
+  }
+
+  public removeCommand(commandName: string): this {
+    this.commandMap.delete(commandName);
     return this;
   }
 
@@ -493,13 +570,9 @@ export class CommandHandler {
     return this;
   }
 
-  public async registerSlashCommands(
-    client: Client,
-    guildId?: string
-  ): Promise<void> {
-    const commandList = Array.from(this.slashCommandMap.values()).map(
-      (command) => command.convertCommandData()
-    ) as ApplicationCommandDataResolvable[];
+  public async registerSlashCommands(client: Client, guildId?: string): Promise<void> {
+    const commandList = Array.from(this.slashCommandMap.values())
+      .map(command => command.convertCommandData()) as ApplicationCommandDataResolvable[];
 
     if (typeof guildId === "string") {
       await client.application?.commands.set(commandList, guildId);

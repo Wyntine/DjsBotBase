@@ -1,12 +1,12 @@
 export interface CooldownMapItem {
-  commandType: CommandTypes;
-  commandName: string;
-  endsAt: number;
-  messageShown: boolean;
+  readonly commandType: CommandTypes;
+  readonly commandName: string;
+  readonly endsAt: number;
+  readonly messageShown: boolean;
 }
 
 export type EditCooldownMapItem = Partial<
-  Omit<CooldownMapItem, "commandType" | "commandName">
+  Pick<CooldownMapItem, "endsAt" | "messageShown">
 >;
 
 export type CommandTypes = "slash" | "message";

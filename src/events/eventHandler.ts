@@ -6,145 +6,197 @@ import type {
   EventMap,
 } from "./eventTypes";
 import type { Client } from "discord.js";
-
 import { Event } from "./eventClass";
 import { readdir } from "fs/promises";
 import { error, logError, logInfo, logWarn } from "../helpers/logger";
 
 export class EventHandler {
-  private eventMap: EventMap = new Map();
-  private eventsDir = "events";
-  private suppressWarnings = false;
+  private readonly eventMap: EventMap = new Map();
+  private readonly eventsDir: string;
+  private readonly suppressWarnings: boolean;
 
   constructor(data?: EventHandlerConstructorData) {
-    if (!data) return;
+    this.eventsDir = this.validateAndGetEventsDir(data?.eventsDir);
+    this.suppressWarnings = this.validateAndGetSuppressWarnings(data?.suppressWarnings);
+  }
 
-    if ("eventsDir" in data) {
-      if (typeof data.eventsDir !== "string") {
-        error("'eventsDir' should be a string.");
-      }
-
-      this.eventsDir = data.eventsDir;
+  private validateAndGetEventsDir(eventsDir?: string): string {
+    if (eventsDir !== undefined && typeof eventsDir !== "string") {
+      error("eventsDir must be a string.");
     }
+    return eventsDir ?? "events";
+  }
 
-    if ("suppressWarnings" in data) {
-      if (typeof data.suppressWarnings !== "boolean") {
-        error("'suppressWarnings' must be a boolean.");
-      }
-
-      this.suppressWarnings = data.suppressWarnings;
+  private validateAndGetSuppressWarnings(suppressWarnings?: boolean): boolean {
+    if (suppressWarnings !== undefined && typeof suppressWarnings !== "boolean") {
+      error("suppressWarnings must be a boolean.");
     }
+    return suppressWarnings ?? false;
   }
 
   public async setEvents(client: Client): Promise<void> {
-    const { eventsDir } = this;
+    this.clearEventsIfExist(client);
+    await this.loadAndRegisterEvents(client);
+  }
 
-    if (this.eventMap.size) {
+  private clearEventsIfExist(client: Client): void {
+    if (this.eventMap.size > 0) {
       this.clearEvents(client);
       logInfo("Old events cleared before setting new events.");
     }
+  }
 
+  private async loadAndRegisterEvents(client: Client): Promise<void> {
     try {
-      const newEventsDir = eventsDir.startsWith("./")
-        ? eventsDir
-        : `./${eventsDir}`;
-      const events = await readdir(newEventsDir, { withFileTypes: true });
-      const eventCategorySet = new Map<CategoryList, Event<CategoryList>[]>();
-
-      logInfo("Reading events...");
-
-      for (const event of events) {
-        const { name } = event;
-
-        try {
-          if (!event.isFile()) {
-            if (!this.suppressWarnings) logWarn(`'${name}' is not a file.`);
-            continue;
-          }
-
-          const fileRegex = /^(\w|\s)+.(js|ts)$/;
-
-          if (!fileRegex.test(name)) {
-            if (!this.suppressWarnings)
-              logWarn(`'${name}' is not a JavaScript/TypeScript file.`);
-            continue;
-          }
-
-          const eventPath = `../../../../${newEventsDir}/${name}`;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-          const eventData = (await import(eventPath))?.default;
-
-          if (!eventData) {
-            if (!this.suppressWarnings)
-              logWarn(`'${name}' does not have an default export.`);
-            continue;
-          }
-
-          if (!(eventData instanceof Event)) {
-            if (!this.suppressWarnings) {
-              logWarn(
-                `'${name}' does not have default export of Event instance.`
-              );
-            }
-            continue;
-          }
-
-          const newEvent = eventData as Event<CategoryList>;
-
-          eventCategorySet.set(newEvent.categoryName, [
-            ...(eventCategorySet.get(newEvent.categoryName) ?? []),
-            newEvent,
-          ]);
-          logInfo(`Event file '${name}' read.`);
-        } catch (innerError) {
-          logError(`Reading event '${name}' failed!`);
-          console.error(innerError);
-        }
-      }
-
-      eventCategorySet.forEach((eventsList, eventCategory) => {
-        const orderedEvents = eventsList
-          .filter((event) => event.runOrder !== undefined)
-          .sort(
-            (firstEvent, secondEvent) =>
-              (firstEvent.runOrder ?? 0) - (secondEvent.runOrder ?? 0)
-          );
-        const randomEvents = eventsList.filter(
-          (event) => event.runOrder === undefined
-        );
-        const sortedEvents = [...orderedEvents, ...randomEvents];
-        const categoryFunction = this.createCategoryRunner(sortedEvents);
-        client.on(eventCategory, categoryFunction);
-        this.eventMap.set(eventCategory, {
-          events: sortedEvents,
-          categoryFunction,
-        });
-        logInfo(
-          `Event category '${eventCategory}' (${sortedEvents.length.toString()} ${
-            sortedEvents.length === 1 ? "event" : "events"
-          }) registered.`
-        );
-      });
-      const totalEvents = Array.from(this.eventMap.values()).reduce(
-        (total, current) => total + current.events.length,
-        0
-      );
-      logInfo(
-        `${totalEvents.toString()} ${
-          totalEvents === 1 ? "event" : "events"
-        } registered.`
-      );
-      logInfo("Reading events finished.");
-    } catch (outerError) {
+      const eventFiles = await this.readEventFiles();
+      const eventCategoryMap = await this.processEventFiles(eventFiles);
+      this.registerEventCategories(client, eventCategoryMap);
+      this.logRegistrationSummary();
+    } catch (error) {
       logError("Reading events failed!");
-      console.error(outerError);
+      console.error(error);
     }
   }
 
-  public getEvents(): Event<CategoryList>[] {
-    return Array.from(this.eventMap.values()).flatMap(
-      (eventList) => eventList.events
+  private async readEventFiles(): Promise<string[]> {
+    const normalizedEventsDir = this.eventsDir.startsWith("./") 
+      ? this.eventsDir 
+      : `./${this.eventsDir}`;
+    
+    const dirents = await readdir(normalizedEventsDir, { withFileTypes: true });
+    logInfo("Reading events...");
+    
+    return dirents
+      .filter(dirent => dirent.isFile())
+      .map(dirent => dirent.name)
+      .filter(name => this.isValidEventFile(name));
+  }
+
+  private isValidEventFile(fileName: string): boolean {
+    const fileRegex = /^[\w\s]+\.(js|ts)$/;
+    
+    if (!fileRegex.test(fileName)) {
+      if (!this.suppressWarnings) {
+        logWarn(`'${fileName}' is not a valid JavaScript/TypeScript file.`);
+      }
+      return false;
+    }
+    
+    return true;
+  }
+
+  private async processEventFiles(eventFiles: string[]): Promise<Map<CategoryList, Event<CategoryList>[]>> {
+    const eventCategoryMap = new Map<CategoryList, Event<CategoryList>[]>();
+    
+    for (const fileName of eventFiles) {
+      try {
+        const event = await this.loadEventFromFile(fileName);
+        if (event) {
+          this.addEventToCategory(eventCategoryMap, event);
+          logInfo(`Event file '${fileName}' loaded.`);
+        }
+      } catch (error) {
+        logError(`Loading event '${fileName}' failed!`);
+        console.error(error);
+      }
+    }
+    
+    return eventCategoryMap;
+  }
+
+  private async loadEventFromFile(fileName: string): Promise<Event<CategoryList> | null> {
+    const normalizedEventsDir = this.eventsDir.startsWith("./") 
+      ? this.eventsDir 
+      : `./${this.eventsDir}`;
+    
+    const eventPath = `../../../../${normalizedEventsDir}/${fileName}`;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const eventModule = await import(eventPath);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const eventData = eventModule?.default;
+
+    if (!eventData) {
+      if (!this.suppressWarnings) {
+        logWarn(`'${fileName}' does not have a default export.`);
+      }
+      return null;
+    }
+
+    if (!(eventData instanceof Event)) {
+      if (!this.suppressWarnings) {
+        logWarn(`'${fileName}' does not export an Event instance as default.`);
+      }
+      return null;
+    }
+
+    return eventData as Event<CategoryList>;
+  }
+
+  private addEventToCategory(
+    eventCategoryMap: Map<CategoryList, Event<CategoryList>[]>,
+    event: Event<CategoryList>
+  ): void {
+    const existingEvents = eventCategoryMap.get(event.categoryName) ?? [];
+    eventCategoryMap.set(event.categoryName, [...existingEvents, event]);
+  }
+
+  private registerEventCategories(
+    client: Client,
+    eventCategoryMap: Map<CategoryList, Event<CategoryList>[]>
+  ): void {
+    for (const [categoryName, events] of eventCategoryMap) {
+      const sortedEvents = this.sortEventsByRunOrder(events);
+      const categoryFunction = this.createCategoryRunner(sortedEvents);
+      
+      client.on(categoryName, categoryFunction);
+      
+      this.eventMap.set(categoryName, {
+        events: sortedEvents,
+        categoryFunction,
+      });
+      
+      logInfo(
+        `Event category '${categoryName}' registered with ${sortedEvents.length.toString()} ${
+          sortedEvents.length === 1 ? "event" : "events"
+        }.`
+      );
+    }
+  }
+
+  private sortEventsByRunOrder(events: Event<CategoryList>[]): Event<CategoryList>[] {
+    const orderedEvents = events
+      .filter(event => event.runOrder !== undefined)
+      .sort((a, b) => (a.runOrder ?? 0) - (b.runOrder ?? 0));
+    
+    const unorderedEvents = events.filter(event => event.runOrder === undefined);
+    
+    return [...orderedEvents, ...unorderedEvents];
+  }
+
+  private logRegistrationSummary(): void {
+    const totalEvents = Array.from(this.eventMap.values())
+      .reduce((total, eventList) => total + eventList.events.length, 0);
+    
+    logInfo(
+      `${totalEvents.toString()} ${totalEvents === 1 ? "event" : "events"} registered successfully.`
     );
+  }
+
+  private createCategoryRunner(events: Event<CategoryList>[]): EventAnonymousRunner {
+    return (...args) => {
+      for (const event of events) {
+        try {
+          event.run(...args);
+        } catch (error) {
+          logError(`Event execution failed for category '${event.categoryName}'`);
+          console.error(error);
+        }
+      }
+    };
+  }
+
+  public getEvents(): Event<CategoryList>[] {
+    return Array.from(this.eventMap.values()).flatMap(eventList => eventList.events);
   }
 
   public getEventCategory<EventCategory extends CategoryList>(
@@ -154,20 +206,9 @@ export class EventHandler {
   }
 
   public clearEvents(client: Client): void {
-    this.eventMap.forEach(({ categoryFunction }, categoryName) =>
-      client.removeListener(
-        categoryName,
-        categoryFunction as (...args: unknown[]) => void
-      )
-    );
+    for (const [categoryName, { categoryFunction }] of this.eventMap) {
+      client.removeListener(categoryName, categoryFunction as (...args: unknown[]) => void);
+    }
     this.eventMap.clear();
-  }
-
-  private createCategoryRunner(
-    events: Event<CategoryList>[]
-  ): EventAnonymousRunner {
-    return (...data) => {
-      events.forEach((event) => event.run(...data));
-    };
   }
 }

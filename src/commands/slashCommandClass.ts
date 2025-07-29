@@ -4,19 +4,27 @@ import type {
   SlashCommandData,
   SlashCommandRunner,
 } from "./commandTypes";
-
 import { SlashCommandBuilder } from "discord.js";
 import { error } from "../helpers/logger";
 
 export class SlashCommand {
-  private data: SlashCommandData;
+  private readonly data: SlashCommandData;
 
   constructor(data: SlashCommandData) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!data) error("Slash command data can not be undefined.");
+    this.validateConstructorData(data);
+    this.data = data;
+  }
 
-    if (!("slashCommandData" in data)) {
-      error("Slash command data must be given.");
+  private validateConstructorData(data: SlashCommandData): asserts data is NonNullable<SlashCommandData> {
+    this.validateSlashCommandData(data);
+    this.validateBooleanOptions(data);
+    this.validateCooldown(data);
+    this.validateRunner(data);
+  }
+
+  private validateSlashCommandData(data: SlashCommandData): void {
+    if (!("slashCommandData" in data) || !data.slashCommandData) {
+      error("Slash command data must be provided.");
     }
 
     if (
@@ -24,46 +32,49 @@ export class SlashCommand {
       typeof data.slashCommandData !== "function"
     ) {
       error(
-        "Slash command data must be a SlashCommandBuilder instance or a function."
+        "Slash command data must be a SlashCommandBuilder instance or a function that returns one."
       );
     }
+  }
 
-    if ("developerOnly" in data && typeof data.developerOnly !== "boolean") {
-      error("Slash command 'developer only' option must be a boolean.");
+  private validateBooleanOptions(data: SlashCommandData): void {
+    const booleanFields = ["developerOnly", "maintenance"] as const;
+    
+    for (const field of booleanFields) {
+      if (field in data && data[field] !== undefined && typeof data[field] !== "boolean") {
+        error(`Slash command '${field}' option must be a boolean.`);
+      }
     }
+  }
 
-    if ("maintenance" in data && typeof data.maintenance !== "boolean") {
-      error("Slash command 'maintenance' option must be a boolean.");
+  private validateCooldown(data: SlashCommandData): void {
+    if ("cooldown" in data && data.cooldown !== undefined) {
+      if (typeof data.cooldown !== "number" || !Number.isFinite(data.cooldown) || data.cooldown <= 0) {
+        error("Slash command cooldown must be a positive finite number.");
+      }
     }
+  }
 
-    if (
-      "cooldown" in data &&
-      (typeof data.cooldown !== "number" || data.cooldown <= 0)
-    ) {
-      error("Slash command 'cooldown' must be a positive number.");
-    }
-
+  private validateRunner(data: SlashCommandData): void {
     if (!("run" in data) || typeof data.run !== "function") {
       error("Slash command runner must be a function.");
     }
-
-    this.data = data;
   }
 
   public convertCommandData(): SlashCommandBuilders {
-    const commandData = this.data.slashCommandData;
+    const { slashCommandData } = this.data;
 
-    if (typeof commandData === "function") {
-      const commandBuilder = commandData(new SlashCommandBuilder());
+    if (typeof slashCommandData === "function") {
+      const commandBuilder = slashCommandData(new SlashCommandBuilder());
 
       if (!(commandBuilder instanceof SlashCommandBuilder)) {
-        error("Converted slash command data is invalid.");
+        error("Slash command data function must return a valid SlashCommandBuilder instance.");
       }
 
       return commandBuilder;
     }
 
-    return commandData;
+    return slashCommandData;
   }
 
   get slashCommandData(): SlashCommandBuilderData {
