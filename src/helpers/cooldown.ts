@@ -5,10 +5,42 @@ import {
   EditCooldownMapItem,
 } from "./helperTypes";
 import { Command } from "../commands/commandClass";
-
-// TODO: Add cooldown cleaning.
+import {
+  ONE_HOUR_IN_MILISECONDS,
+  ONE_SECOND_IN_MILISECONDS,
+} from "./constants";
 
 const cooldowns = new Map<string, CooldownMapItem[]>();
+
+let cooldownClearInterval: NodeJS.Timeout | undefined;
+
+export function startCooldownClearJob(): void {
+  if (cooldownClearInterval) disableCooldownClearJob();
+
+  cooldownClearInterval = setInterval(
+    clearExpiredCooldowns,
+    ONE_HOUR_IN_MILISECONDS
+  );
+}
+
+export function disableCooldownClearJob(): void {
+  clearInterval(cooldownClearInterval);
+  cooldownClearInterval = undefined;
+}
+
+export function clearExpiredCooldowns() {
+  const now = Date.now();
+
+  for (const [userId, userCooldowns] of cooldowns) {
+    const finalUserCooldowns = userCooldowns.filter(
+      (cooldown) => now > cooldown.endsAt
+    );
+
+    if (finalUserCooldowns.length === userCooldowns.length) continue;
+
+    cooldowns.set(userId, finalUserCooldowns);
+  }
+}
 
 export function canMessageShownAgain(
   cooldownItem: CooldownMapItem,
@@ -23,7 +55,8 @@ export function canMessageShownAgain(
 
   const isCooldownExpired =
     isValueValid &&
-    Date.now() >= messageLastShown + messageCooldownInSeconds * 1000;
+    Date.now() >=
+      messageLastShown + messageCooldownInSeconds * ONE_SECOND_IN_MILISECONDS;
 
   return !isValueValid || isCooldownExpired;
 }
@@ -72,7 +105,7 @@ export function createCooldown(
     (typeof cooldownOverride === "number"
       ? cooldownOverride
       : command.cooldown) *
-      1000;
+      ONE_SECOND_IN_MILISECONDS;
 
   return {
     commandName,

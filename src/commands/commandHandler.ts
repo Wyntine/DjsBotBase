@@ -20,7 +20,12 @@ import {
   isCooldownAppliable,
   editCooldown,
   canMessageShownAgain,
+  startCooldownClearJob,
 } from "../helpers/cooldown";
+import {
+  ONE_MINUTE_IN_SECONDS,
+  ONE_SECOND_IN_MILISECONDS,
+} from "src/helpers/constants";
 
 export class CommandHandler {
   private commandMap: CommandMap = new Map();
@@ -40,7 +45,7 @@ export class CommandHandler {
   private suppressWarnings = false;
   private messages: CommandHandlerExceptionMessages = {};
   private maintenance = false;
-  private cooldownMessageIntervalInSeconds = 60;
+  private cooldownMessageIntervalInSeconds = ONE_MINUTE_IN_SECONDS;
 
   constructor(data?: CommandHandlerConstructorData) {
     if (!data) return;
@@ -54,6 +59,8 @@ export class CommandHandler {
     this.maintenance = this.verifyMaintenance(data);
     this.cooldownMessageIntervalInSeconds =
       this.verifyCooldownMessageInterval(data);
+
+    startCooldownClearJob();
   }
 
   //* Normal commands
@@ -207,7 +214,8 @@ export class CommandHandler {
       )
         return;
 
-      const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
+      const secondsLeft =
+        (cooldownItem.endsAt - Date.now()) / ONE_SECOND_IN_MILISECONDS;
       const errorMessage = (
         this.messages.cooldown ??
         "Bu komutu kullanmak için **{cooldown}** saniye bekleyiniz."
@@ -371,7 +379,8 @@ export class CommandHandler {
       )
         return;
 
-      const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
+      const secondsLeft =
+        (cooldownItem.endsAt - Date.now()) / ONE_SECOND_IN_MILISECONDS;
       const errorMessage = (
         this.messages.cooldown ??
         "Bu komutu kullanmak için **{cooldown}** saniye bekleyiniz."
