@@ -19,21 +19,8 @@ export class EventHandler {
   constructor(data?: EventHandlerConstructorData) {
     if (!data) return;
 
-    if ("eventsDir" in data) {
-      if (typeof data.eventsDir !== "string") {
-        error("'eventsDir' should be a string.");
-      }
-
-      this.eventsDir = data.eventsDir;
-    }
-
-    if ("suppressWarnings" in data) {
-      if (typeof data.suppressWarnings !== "boolean") {
-        error("'suppressWarnings' must be a boolean.");
-      }
-
-      this.suppressWarnings = data.suppressWarnings;
-    }
+    this.eventsDir = this.verifyEventsDir(data);
+    this.suppressWarnings = this.verifySuppressWarnings(data);
   }
 
   public async setEvents(client: Client): Promise<void> {
@@ -169,5 +156,27 @@ export class EventHandler {
     return (...data) => {
       events.forEach((event) => event.run(...data));
     };
+  }
+
+  //* Verifiers
+
+  private verifyEventsDir(data: EventHandlerConstructorData): string {
+    if (!("eventsDir" in data)) return this.eventsDir;
+
+    if (typeof data.eventsDir !== "string") {
+      error("'eventsDir' must be a string.");
+    }
+
+    return data.eventsDir;
+  }
+
+  private verifySuppressWarnings(data: EventHandlerConstructorData): boolean {
+    if (!("suppressWarnings" in data)) return this.suppressWarnings;
+
+    if (typeof data.suppressWarnings !== "boolean") {
+      error("'suppressWarnings' must be a boolean.");
+    }
+
+    return data.suppressWarnings;
   }
 }

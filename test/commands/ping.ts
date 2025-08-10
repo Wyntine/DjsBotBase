@@ -2,7 +2,7 @@ import { Command } from "djs-bot-base";
 
 export default new Command({
   name: "ping",
-  cooldown: 200,
+  cooldown: 10,
   maintenance: false,
   async run(message) {
     const client = message?.client;

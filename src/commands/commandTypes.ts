@@ -21,29 +21,29 @@ export type CommandRunner<InGuild extends boolean = boolean> = (
 ) => unknown;
 
 export interface CommandData<InGuild extends boolean = boolean> {
-  name: string;
-  aliases?: string[];
-  guildOnly?: InGuild;
-  dmOnly?: boolean;
-  developerOnly?: boolean;
-  maintenance?: boolean;
-  cooldown?: number;
-  run: CommandRunner<InGuild>;
+  readonly name: string;
+  readonly aliases?: string[];
+  readonly guildOnly?: InGuild;
+  readonly dmOnly?: boolean;
+  readonly developerOnly?: boolean;
+  readonly maintenance?: boolean;
+  readonly cooldown?: number;
+  readonly run: CommandRunner<InGuild>;
 }
 
 export interface CommandHandlerConstructorData {
-  commandsDir?: string;
-  slashCommandsDir?: string;
-  developerIds?: string[];
-  prefix?: string;
-  suppressWarnings?: boolean;
-  messages?: CommandHandlerExceptionMessages;
-  maintenance?: boolean;
+  readonly commandsDir?: string;
+  readonly slashCommandsDir?: string;
+  readonly developerIds?: string[];
+  readonly prefix?: string;
+  readonly suppressWarnings?: boolean;
+  readonly messages?: CommandHandlerExceptionMessages;
+  readonly maintenance?: boolean;
 }
 
 export interface CommandHandlerExceptionMessages {
-  cooldown?: string;
-  maintenance?: string;
+  readonly cooldown?: string;
+  readonly maintenance?: string;
 }
 
 //* Slash commands
@@ -67,9 +67,9 @@ export type SlashCommandRunner = (
 ) => Awaitable<unknown>;
 
 export interface SlashCommandData {
-  slashCommandData: SlashCommandBuilderData;
-  developerOnly?: boolean;
-  maintenance?: boolean;
-  cooldown?: number;
-  run: SlashCommandRunner;
+  readonly slashCommandData: SlashCommandBuilderData;
+  readonly developerOnly?: boolean;
+  readonly maintenance?: boolean;
+  readonly cooldown?: number;
+  readonly run: SlashCommandRunner;
 }

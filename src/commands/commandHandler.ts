@@ -15,7 +15,12 @@ import { SlashCommand } from "./slashCommandClass";
 import { Command } from "./commandClass";
 import { readdir } from "fs/promises";
 import { error, logError, logInfo, logWarn } from "../helpers/logger";
-import { addCooldown, checkCooldown, editCooldown } from "../helpers/cooldown";
+import {
+  addCooldown,
+  isCooldownAppliable,
+  editCooldown,
+  canMessageShownAgain,
+} from "../helpers/cooldown";
 
 export class CommandHandler {
   private commandMap: CommandMap = new Map();
@@ -39,83 +44,13 @@ export class CommandHandler {
   constructor(data?: CommandHandlerConstructorData) {
     if (!data) return;
 
-    if ("commandsDir" in data) {
-      if (typeof data.commandsDir !== "string") {
-        error("'commandsDir' must be a string.");
-      }
-
-      this.commandsDir = data.commandsDir;
-    }
-
-    if ("slashCommandsDir" in data) {
-      if (typeof data.slashCommandsDir !== "string") {
-        error("'slashCommandsDir' must be a string.");
-      }
-
-      this.slashCommandsDir = data.slashCommandsDir;
-    }
-
-    if ("developerIds" in data) {
-      if (!Array.isArray(data.developerIds)) {
-        error("'developerIds' must be a string array.");
-      }
-
-      if (
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-confusing-void-expression
-        data.developerIds.find((developer) => typeof developer !== "string")
-      ) {
-        error("'developerIds' has an id that is not a string.");
-      }
-
-      this.developerIds = data.developerIds;
-    }
-
-    if ("prefix" in data) {
-      if (typeof data.prefix !== "string") {
-        error("'prefix' must be a string.");
-      }
-
-      this.prefix = data.prefix;
-    }
-
-    if ("suppressWarnings" in data) {
-      if (typeof data.suppressWarnings !== "boolean") {
-        error("'suppressWarnings' must be a boolean.");
-      }
-
-      this.suppressWarnings = data.suppressWarnings;
-    }
-
-    if ("messages" in data) {
-      if (
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        !data.messages ||
-        typeof data.messages !== "object" ||
-        Array.isArray(data.messages)
-      ) {
-        error("'messages' must be a object.");
-      }
-
-      const messages = data.messages;
-
-      for (const item of ["cooldown", "maintenance"]) {
-        if (item in messages) {
-          const str = messages[item as keyof typeof messages];
-          if (typeof str !== "string")
-            error(`'messages.${item}' must be a string.`);
-        }
-      }
-
-      this.messages = messages;
-    }
-
-    if ("maintenance" in data) {
-      if (typeof data.maintenance !== "boolean") {
-        error("'maintenance' must be a boolean");
-      }
-
-      this.maintenance = data.maintenance;
-    }
+    this.commandsDir = this.verifyCommandsDir(data);
+    this.slashCommandsDir = this.verifySlashCommandsDir(data);
+    this.developerIds = this.verifyDeveloperIds(data);
+    this.prefix = this.verifyPrefix(data);
+    this.suppressWarnings = this.verifySuppressWarnings(data);
+    this.messages = this.verifyMessages(data);
+    this.maintenance = this.verifyMaintenance(data);
   }
 
   //* Normal commands
@@ -255,10 +190,13 @@ export class CommandHandler {
       if (command.guildOnly && !message.guild) return;
     }
 
-    const [cooldownItem, cooldownCheck] = checkCooldown(author.id, command);
+    const [cooldownItem, cooldownCheck] = isCooldownAppliable(
+      author.id,
+      command
+    );
 
     if (cooldownItem && !cooldownCheck) {
-      if (cooldownItem.messageShown) return;
+      if (!canMessageShownAgain(cooldownItem)) return;
 
       const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
       const errorMessage = (
@@ -267,7 +205,7 @@ export class CommandHandler {
       ).replace("{cooldown}", secondsLeft.toString());
 
       void message.reply(errorMessage);
-      editCooldown(author.id, command, { messageShown: true });
+      editCooldown(author.id, command, { messageLastShown: Date.now() });
       return;
     }
 
@@ -278,7 +216,7 @@ export class CommandHandler {
       const errorMessage = this.messages.maintenance ?? "Bu komut bakımdadır.";
 
       void message.reply(errorMessage);
-      addCooldown(author.id, command, 5000);
+      addCooldown(author.id, command);
       return;
     }
 
@@ -410,13 +348,13 @@ export class CommandHandler {
 
     if (!command) return;
 
-    const [cooldownItem, cooldownCheck] = checkCooldown(
+    const [cooldownItem, cooldownCheck] = isCooldownAppliable(
       interaction.user.id,
       command
     );
 
     if (cooldownItem && !cooldownCheck) {
-      if (cooldownItem.messageShown) return;
+      if (!canMessageShownAgain(cooldownItem)) return;
 
       const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
       const errorMessage = (
@@ -425,7 +363,9 @@ export class CommandHandler {
       ).replace("{cooldown}", secondsLeft.toString());
 
       void interaction.reply(errorMessage);
-      editCooldown(interaction.user.id, command, { messageShown: true });
+      editCooldown(interaction.user.id, command, {
+        messageLastShown: Date.now(),
+      });
       return;
     }
 
@@ -436,7 +376,7 @@ export class CommandHandler {
       const errorMessage = this.messages.maintenance ?? "Bu komut bakımdadır.";
 
       void interaction.reply(errorMessage);
-      addCooldown(interaction.user.id, command, 5000);
+      addCooldown(interaction.user.id, command);
       return;
     }
 
@@ -511,5 +451,101 @@ export class CommandHandler {
   public removeSlashCommand(slashCommandName: string): this {
     this.slashCommandMap.delete(slashCommandName);
     return this;
+  }
+
+  //* Verifiers
+
+  private verifyCommandsDir(data: CommandHandlerConstructorData): string {
+    if (!("commandsDir" in data)) return this.commandsDir;
+
+    if (typeof data.commandsDir !== "string") {
+      error("'commandsDir' must be a string.");
+    }
+
+    return data.commandsDir;
+  }
+
+  private verifySlashCommandsDir(data: CommandHandlerConstructorData): string {
+    if (!("slashCommandsDir" in data)) return this.slashCommandsDir;
+
+    if (typeof data.slashCommandsDir !== "string") {
+      error("'slashCommandsDir' must be a string.");
+    }
+
+    return data.slashCommandsDir;
+  }
+
+  private verifyDeveloperIds(data: CommandHandlerConstructorData): string[] {
+    if (!("developerIds" in data)) return this.developerIds;
+
+    if (!Array.isArray(data.developerIds)) {
+      error("'developerIds' must be a string array.");
+    }
+
+    if (
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-confusing-void-expression
+      data.developerIds.find((developer) => typeof developer !== "string")
+    ) {
+      error("'developerIds' has an id that is not a string.");
+    }
+
+    return data.developerIds;
+  }
+
+  private verifyPrefix(data: CommandHandlerConstructorData): string {
+    if (!("prefix" in data)) return this.prefix;
+
+    if (typeof data.prefix !== "string") {
+      error("'prefix' must be a string.");
+    }
+
+    return data.prefix;
+  }
+
+  private verifySuppressWarnings(data: CommandHandlerConstructorData): boolean {
+    if (!("suppressWarnings" in data)) return this.suppressWarnings;
+
+    if (typeof data.suppressWarnings !== "boolean") {
+      error("'suppressWarnings' must be a boolean.");
+    }
+
+    return data.suppressWarnings;
+  }
+
+  private verifyMessages(
+    data: CommandHandlerConstructorData
+  ): CommandHandlerExceptionMessages {
+    if (!("messages" in data)) return this.messages;
+
+    if (
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      !data.messages ||
+      typeof data.messages !== "object" ||
+      Array.isArray(data.messages)
+    ) {
+      error("'messages' must be a object.");
+    }
+
+    const messages = data.messages;
+
+    for (const item of ["cooldown", "maintenance"]) {
+      if (item in messages) {
+        const str = messages[item as keyof typeof messages];
+        if (typeof str !== "string")
+          error(`'messages.${item}' must be a string.`);
+      }
+    }
+
+    return messages;
+  }
+
+  private verifyMaintenance(data: CommandHandlerConstructorData): boolean {
+    if (!("maintenance" in data)) return this.maintenance;
+
+    if (typeof data.maintenance !== "boolean") {
+      error("'maintenance' must be a boolean");
+    }
+
+    return data.maintenance;
   }
 }

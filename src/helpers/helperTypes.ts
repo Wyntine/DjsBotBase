@@ -1,8 +1,8 @@
 export interface CooldownMapItem {
-  commandType: CommandTypes;
-  commandName: string;
-  endsAt: number;
-  messageShown: boolean;
+  readonly commandType: CommandTypes;
+  readonly commandName: string;
+  readonly endsAt: number;
+  readonly messageLastShown?: number | undefined;
 }
 
 export type EditCooldownMapItem = Partial<

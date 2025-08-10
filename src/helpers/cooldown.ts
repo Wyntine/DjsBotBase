@@ -6,41 +6,59 @@ import {
 } from "./helperTypes";
 import { Command } from "../commands/commandClass";
 
+// TODO: Add cooldown cleaning.
+// TODO: Make it configurable.
+export const MESSAGE_SHOW_COOLDOWN_MILISECONDS = 60 * 1000;
+
 const cooldowns = new Map<string, CooldownMapItem[]>();
 
-export function checkCooldown(
+export function canMessageShownAgain(cooldownItem: CooldownMapItem): boolean {
+  const { messageLastShown = undefined } = cooldownItem;
+
+  const isValueValid =
+    messageLastShown !== undefined &&
+    Number.isSafeInteger(messageLastShown) &&
+    messageLastShown > 0;
+
+  const isCooldownExpired =
+    isValueValid &&
+    Date.now() >= messageLastShown + MESSAGE_SHOW_COOLDOWN_MILISECONDS;
+
+  return !isValueValid || isCooldownExpired;
+}
+
+export function isCooldownAppliable(
   userId: string,
   command: Command | SlashCommand
 ): [CooldownMapItem | undefined, boolean] {
-  const cooldown = getCooldown(userId, command);
+  const cooldownItem = getCooldown(userId, command);
 
-  const result = ((): boolean => {
-    if (!cooldown) return true;
-    if (Number.isInteger(command.cooldown) && command.cooldown <= 0)
-      return true;
-    if (Date.now() <= cooldown.endsAt) return false;
-    if (cooldown.messageShown) return false;
+  const isItemAvailable = !!cooldownItem;
+  const hasValidCooldownValue =
+    Number.isInteger(command.cooldown) && command.cooldown > 0;
+  const isItemEnded = isItemAvailable && Date.now() > cooldownItem.endsAt;
+  const hasItemAndSuitableState = isItemAvailable && isItemEnded;
 
-    return true;
-  })();
+  const result =
+    hasValidCooldownValue && (!isItemAvailable || hasItemAndSuitableState);
 
-  return [cooldown, result];
+  return [cooldownItem, result];
 }
 
 export function addCooldown(
   userId: string,
   command: SlashCommand | Command,
-  cooldown?: number
+  cooldownOverride?: number
 ): void {
   if (Number.isInteger(command.cooldown) && command.cooldown <= 0) return;
 
-  const cooldownItem = createCooldown(command, cooldown);
+  const cooldownItem = createCooldown(command, cooldownOverride);
   setCooldown(userId, cooldownItem);
 }
 
 export function createCooldown(
   command: Command | SlashCommand,
-  cooldown?: number
+  cooldownOverride?: number
 ): CooldownMapItem {
   const isMessageCommand = command instanceof Command;
   const commandType: CommandTypes = isMessageCommand ? "message" : "slash";
@@ -50,13 +68,16 @@ export function createCooldown(
     : command.convertCommandData().name;
   const endsAt =
     Date.now() +
-    (typeof cooldown === "number" ? cooldown : command.cooldown) * 1000;
+    (typeof cooldownOverride === "number"
+      ? cooldownOverride
+      : command.cooldown) *
+      1000;
 
   return {
     commandName,
     commandType,
     endsAt,
-    messageShown: false,
+    messageLastShown: undefined,
   };
 }
 
@@ -89,15 +110,15 @@ export function editCooldown(
   setCooldown(userId, newCooldown);
 }
 
-export function setCooldown(userId: string, cooldown: CooldownMapItem) {
+export function setCooldown(userId: string, newCooldown: CooldownMapItem) {
   const currentUserCooldowns = cooldowns.get(userId) ?? [];
   const finalUserCooldowns = currentUserCooldowns
     .filter(
       (cooldown) =>
-        cooldown.commandType === cooldown.commandType &&
-        cooldown.commandName === cooldown.commandName
+        cooldown.commandType !== newCooldown.commandType ||
+        cooldown.commandName !== newCooldown.commandName
     )
-    .concat(cooldown);
+    .concat(newCooldown);
 
   cooldowns.set(userId, finalUserCooldowns);
 }

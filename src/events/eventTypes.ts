@@ -15,17 +15,17 @@ export type EventRunner<EventCategory extends CategoryList> = (
 ) => Awaitable<unknown>;
 
 export interface EventList<CategoryName extends CategoryList> {
-  categoryFunction: EventAnonymousRunner;
-  events: Event<CategoryName>[];
+  readonly categoryFunction: EventAnonymousRunner;
+  readonly events: Event<CategoryName>[];
 }
 
 export interface EventData<EventCategory extends CategoryList> {
-  categoryName: EventCategory;
-  runOrder?: number;
-  run: EventRunner<EventCategory>;
+  readonly categoryName: EventCategory;
+  readonly runOrder?: number;
+  readonly run: EventRunner<EventCategory>;
 }
 
 export interface EventHandlerConstructorData {
-  eventsDir?: string;
-  suppressWarnings?: boolean;
+  readonly eventsDir?: string;
+  readonly suppressWarnings?: boolean;
 }
