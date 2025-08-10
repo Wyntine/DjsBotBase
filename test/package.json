@@ -1,0 +1,17 @@
+{
+  "name": "test",
+  "version": "1.0.0",
+  "description": "djs-bot-base test module",
+  "license": "ISC",
+  "author": "Wyntine",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "build": "node scripts/buildPackage.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.21.0",
+    "dotenv": "^17.2.0",
+    "tar": "^7.4.3"
+  }
+}

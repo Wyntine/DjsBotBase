@@ -4,3 +4,5 @@ djs-bot-base-*
 pnpm-lock.yaml
 
 dist
+
+test/.env
