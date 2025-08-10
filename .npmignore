@@ -3,6 +3,7 @@ package-lock.json
 djs-bot-base-*
 pnpm-lock.yaml
 
+test
 src
 eslint.config.mjs
 .prettierrc.yaml
