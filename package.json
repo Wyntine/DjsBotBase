@@ -1,6 +1,6 @@
 {
   "name": "djs-bot-base",
-  "version": "1.5.0-beta.3",
+  "version": "1.6.0-beta.1",
   "description": "Discord.js tabanlı komut ve etkinlik sistemlerine sahip bir bot temeli",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
