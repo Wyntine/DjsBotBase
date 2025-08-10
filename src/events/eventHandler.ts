@@ -150,6 +150,7 @@ export class EventHandler {
     this.eventMap.clear();
   }
 
+  // TODO: Add error handlers for events and commands
   private createCategoryRunner(
     events: Event<CategoryList>[]
   ): EventAnonymousRunner {

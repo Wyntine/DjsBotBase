@@ -1,4 +1,5 @@
 import type { Command } from "./commandClass";
+import type { SlashCommand } from "./slashCommandClass";
 import type {
   Awaitable,
   ChatInputCommandInteraction,
@@ -9,7 +10,6 @@ import type {
   SlashCommandSubcommandGroupBuilder,
   SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
-import type { SlashCommand } from "./slashCommandClass";
 
 //* Normal commands
 
