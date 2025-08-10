@@ -39,6 +39,7 @@ export interface CommandHandlerConstructorData {
   readonly suppressWarnings?: boolean;
   readonly messages?: CommandHandlerExceptionMessages;
   readonly maintenance?: boolean;
+  readonly cooldownMessageIntervalInSeconds?: number;
 }
 
 export interface CommandHandlerExceptionMessages {

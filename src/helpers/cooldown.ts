@@ -7,12 +7,13 @@ import {
 import { Command } from "../commands/commandClass";
 
 // TODO: Add cooldown cleaning.
-// TODO: Make it configurable.
-export const MESSAGE_SHOW_COOLDOWN_MILISECONDS = 60 * 1000;
 
 const cooldowns = new Map<string, CooldownMapItem[]>();
 
-export function canMessageShownAgain(cooldownItem: CooldownMapItem): boolean {
+export function canMessageShownAgain(
+  cooldownItem: CooldownMapItem,
+  messageCooldownInSeconds: number
+): boolean {
   const { messageLastShown = undefined } = cooldownItem;
 
   const isValueValid =
@@ -22,7 +23,7 @@ export function canMessageShownAgain(cooldownItem: CooldownMapItem): boolean {
 
   const isCooldownExpired =
     isValueValid &&
-    Date.now() >= messageLastShown + MESSAGE_SHOW_COOLDOWN_MILISECONDS;
+    Date.now() >= messageLastShown + messageCooldownInSeconds * 1000;
 
   return !isValueValid || isCooldownExpired;
 }

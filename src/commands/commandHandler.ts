@@ -40,6 +40,7 @@ export class CommandHandler {
   private suppressWarnings = false;
   private messages: CommandHandlerExceptionMessages = {};
   private maintenance = false;
+  private cooldownMessageIntervalInSeconds = 60;
 
   constructor(data?: CommandHandlerConstructorData) {
     if (!data) return;
@@ -51,6 +52,8 @@ export class CommandHandler {
     this.suppressWarnings = this.verifySuppressWarnings(data);
     this.messages = this.verifyMessages(data);
     this.maintenance = this.verifyMaintenance(data);
+    this.cooldownMessageIntervalInSeconds =
+      this.verifyCooldownMessageInterval(data);
   }
 
   //* Normal commands
@@ -196,7 +199,13 @@ export class CommandHandler {
     );
 
     if (cooldownItem && !cooldownCheck) {
-      if (!canMessageShownAgain(cooldownItem)) return;
+      if (
+        !canMessageShownAgain(
+          cooldownItem,
+          this.cooldownMessageIntervalInSeconds
+        )
+      )
+        return;
 
       const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
       const errorMessage = (
@@ -354,7 +363,13 @@ export class CommandHandler {
     );
 
     if (cooldownItem && !cooldownCheck) {
-      if (!canMessageShownAgain(cooldownItem)) return;
+      if (
+        !canMessageShownAgain(
+          cooldownItem,
+          this.cooldownMessageIntervalInSeconds
+        )
+      )
+        return;
 
       const secondsLeft = (cooldownItem.endsAt - Date.now()) / 1000;
       const errorMessage = (
@@ -547,5 +562,22 @@ export class CommandHandler {
     }
 
     return data.maintenance;
+  }
+
+  private verifyCooldownMessageInterval(
+    data: CommandHandlerConstructorData
+  ): number {
+    if (!("cooldownMessageIntervalInSeconds" in data))
+      return this.cooldownMessageIntervalInSeconds;
+
+    const interval = data.cooldownMessageIntervalInSeconds;
+
+    if (!Number.isSafeInteger(interval) || interval < 0) {
+      error(
+        "'cooldownMessageIntervalInSeconds' must be a non-negative integer."
+      );
+    }
+
+    return interval;
   }
 }
