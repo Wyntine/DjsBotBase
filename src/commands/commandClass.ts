@@ -94,13 +94,13 @@ export class Command<InGuild extends boolean = boolean> {
   private verifyCommandFlags(data: CommandData<InGuild>) {
     if (data.guildOnly === true && data.dmOnly === true) {
       logWarn(
-        "Command set to both guild and DM only (same as not setting two values). Command can work in everywhere."
+        "Command set to both guild-only and DM-only. It has no effect, command can work everywhere."
       );
     }
 
     if (data.guildOnly === false && data.dmOnly === false) {
       logWarn(
-        "Command set to both not guild and not DM only (same as not setting two values). Command can work in everywhere."
+        "Command set to both not guild-only and not DM-only. It has no effect, command can work everywhere."
       );
     }
   }

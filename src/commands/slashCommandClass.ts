@@ -51,19 +51,21 @@ export class SlashCommand {
   }
 
   public convertCommandData(): SlashCommandBuilders {
-    const commandData = this.data.slashCommandData;
+    const { slashCommandData } = this.data;
 
-    if (typeof commandData === "function") {
-      const commandBuilder = commandData(new SlashCommandBuilder());
+    if (typeof slashCommandData === "function") {
+      const commandBuilder = slashCommandData(new SlashCommandBuilder());
 
       if (!(commandBuilder instanceof SlashCommandBuilder)) {
-        error("Converted slash command data is invalid.");
+        error(
+          "Slash command data function must return a valid SlashCommandBuilder instance."
+        );
       }
 
       return commandBuilder;
     }
 
-    return commandData;
+    return slashCommandData;
   }
 
   get slashCommandData(): SlashCommandBuilderData {
