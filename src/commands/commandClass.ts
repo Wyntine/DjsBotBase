@@ -1,6 +1,6 @@
 import type { CommandData, CommandRunner } from "./commandTypes";
 
-import { error, logWarn } from "../helpers/logger";
+import { error, logError, logWarn } from "../helpers/logger";
 
 export class Command<InGuild extends boolean = boolean> {
   private data: CommandData<InGuild>;
@@ -49,7 +49,13 @@ export class Command<InGuild extends boolean = boolean> {
   }
 
   get run(): CommandRunner<InGuild> {
-    return this.data.run;
+    return async (message, args) => {
+      try {
+        await this.data.run(message, args);
+      } catch (error) {
+        logError(`An error occurred in command '${this.name}'`, error);
+      }
+    };
   }
 
   //* Verifiers

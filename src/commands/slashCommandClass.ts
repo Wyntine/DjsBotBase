@@ -6,7 +6,7 @@ import type {
 } from "./commandTypes";
 
 import { SlashCommandBuilder } from "discord.js";
-import { error } from "../helpers/logger";
+import { error, logError } from "../helpers/logger";
 
 export class SlashCommand {
   private data: SlashCommandData;
@@ -85,6 +85,15 @@ export class SlashCommand {
   }
 
   get run(): SlashCommandRunner {
-    return this.data.run;
+    return async (interaction) => {
+      try {
+        await this.data.run(interaction);
+      } catch (error) {
+        logError(
+          `An error occurred in command '${this.slashCommandData.name}'`,
+          error
+        );
+      }
+    };
   }
 }

@@ -155,7 +155,19 @@ export class EventHandler {
     events: Event<CategoryList>[]
   ): EventAnonymousRunner {
     return (...data) => {
-      events.forEach((event) => event.run(...data));
+      for (const event of events) {
+        // Make consecutive event execution async
+        void (async () => {
+          try {
+            await event.run(...data);
+          } catch (error) {
+            logError(
+              `An error occurred in event category '${event.categoryName}'`,
+              error
+            );
+          }
+        })();
+      }
     };
   }
 
