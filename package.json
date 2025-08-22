@@ -2,13 +2,20 @@
   "name": "djs-bot-base",
   "version": "1.7.0",
   "description": "Discord.js tabanlı komut ve etkinlik sistemlerine sahip bir bot temeli",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "exports": {
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
+    },
+    "import": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "type": "module",
   "scripts": {
-    "build": "run-s build:clean build:ts build:prettier",
-    "build:clean": "rimraf ./dist",
-    "build:ts": "tsc",
-    "build:prettier": "prettier --write ./dist",
+    "build": "run-s build:ts",
+    "build:ts": "tsdown",
     "lint": "run-s lint:typeCheck lint:eslint lint:prettier",
     "lint:typeCheck": "tsc --noEmit",
     "lint:prettier": "prettier --write ./src",
@@ -39,10 +46,11 @@
     "eslint": "^9.33.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.6.2",
-    "rimraf": "^6.0.1",
+    "tsdown": "^0.14.1",
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "chalk": "^5.6.0",
     "zod": "^4.0.17"
   }
 }

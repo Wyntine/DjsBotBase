@@ -21,6 +21,7 @@ export default [
       "**/node_modules",
       "**/eslint.config.mjs",
       "**/test",
+      "./tsdown.config.ts",
     ],
   },
   ...compat.extends(

@@ -4,7 +4,7 @@
   "description": "djs-bot-base test module",
   "license": "ISC",
   "author": "Wyntine",
-  "type": "module",
+  "type": "commonjs",
   "main": "index.ts",
   "scripts": {
     "build": "node scripts/buildPackage.js"
