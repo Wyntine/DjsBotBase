@@ -25,7 +25,7 @@ import {
 import {
   ONE_MINUTE_IN_SECONDS,
   ONE_SECOND_IN_MILISECONDS,
-} from "src/helpers/constants";
+} from "../helpers/constants";
 
 export class CommandHandler {
   private commandMap: CommandMap = new Map();
